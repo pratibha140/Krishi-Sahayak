@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.language_title }} - {{ t.app_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260919_v1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Scoped High-Fidelity Agritech Onboarding Styles */
+        * { box-sizing: border-box; }
+        body.onboarding-page-body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(170deg, #dcf2e3 0%, #ecf7ee 30%, #f4faf5 60%, #e1f1e5 100%);
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Decorative Agricultural Foliage Accents */
+        .agri-bg-leaf-tl {
+            position: fixed;
+            top: -20px;
+            left: -20px;
+            width: 260px;
+            height: 260px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.55;
+        }
+        .agri-bg-leaf-br {
+            position: fixed;
+            bottom: -30px;
+            right: -20px;
+            width: 300px;
+            height: 300px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.55;
+        }
+        .agri-bg-leaf-bl {
+            position: fixed;
+            bottom: -40px;
+            left: -30px;
+            width: 240px;
+            height: 240px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.45;
+        }
+
+        .onboarding-shell {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 480px;
+            padding: 28px 16px;
+            margin: 0 auto;
+        }
+
+        .onboarding-card {
+            background: #ffffff;
+            border: 1.5px solid #dbe8dd;
+            border-radius: 24px;
+            box-shadow: 0 20px 48px rgba(16, 52, 23, 0.09), 0 2px 8px rgba(0, 0, 0, 0.03);
+            padding: 38px 34px 34px;
+            text-align: center;
+        }
+
+        @media (max-width: 520px) {
+            .onboarding-shell { padding: 18px 12px; }
+            .onboarding-card {
+                padding: 28px 20px 24px;
+                border-radius: 20px;
+            }
+        }
+
+        /* Brand Identity Lockup */
+        .onboarding-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .onboarding-logo-badge {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            box-shadow: 0 6px 18px rgba(22, 163, 74, 0.28);
+        }
+        .onboarding-brand-name {
+            font-size: 1.42rem;
+            font-weight: 800;
+            color: #14532d;
+            margin: 0 0 3px;
+            letter-spacing: -0.025em;
+        }
+        .onboarding-brand-sub {
+            font-size: 0.84rem;
+            color: #64748b;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+        }
+
+        /* Subtle Step Progress Indicator (Step 1 of 2) */
+        .onboarding-step-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 22px;
+        }
+        .onboarding-step-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #16a34a;
+            letter-spacing: 0.02em;
+        }
+        .onboarding-step-track {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .onboarding-step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        .onboarding-step-dot.active {
+            background: #16a34a;
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+        }
+        .onboarding-step-dot.inactive {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+        }
+        .onboarding-step-line {
+            width: 68px;
+            height: 2.5px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .onboarding-step-line.step1-line {
+            background: linear-gradient(to right, #16a34a 50%, #e2e8f0 50%);
+        }
+
+        /* Titles */
+        .onboarding-heading {
+            font-size: 1.52rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 8px;
+            letter-spacing: -0.025em;
+        }
+        .onboarding-subheading {
+            font-size: 0.90rem;
+            color: #64748b;
+            margin: 0 0 24px;
+            line-height: 1.52;
+            padding: 0 4px;
+        }
+
+        /* Language Select Cards */
+        .onboarding-lang-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .onboarding-lang-card {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 15px 18px !important;
+            background: #ffffff !important;
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: 14px !important;
+            cursor: pointer !important;
+            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            user-select: none !important;
+            position: relative !important;
+            text-decoration: none !important;
+        }
+        .onboarding-lang-card:hover {
+            border-color: #86efac !important;
+            background: #fbfdfb !important;
+            box-shadow: 0 4px 14px rgba(22, 163, 74, 0.08) !important;
+        }
+        .onboarding-lang-card.is-selected {
+            border-color: #16a34a !important;
+            background: #f0fdf4 !important;
+            box-shadow: 0 4px 16px rgba(22, 163, 74, 0.12) !important;
+        }
+        .onboarding-lang-card input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .onboarding-lang-left {
+            display: flex !important;
+            align-items: center !important;
+            gap: 14px !important;
+            text-align: left !important;
+        }
+        .onboarding-lang-radio {
+            width: 20px !important;
+            height: 20px !important;
+            min-width: 20px !important;
+            border-radius: 50% !important;
+            border: 2px solid #cbd5e1 !important;
+            background: #ffffff !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.18s ease !important;
+            flex-shrink: 0 !important;
+            box-sizing: border-box !important;
+        }
+        .onboarding-lang-card.is-selected .onboarding-lang-radio {
+            border-color: #16a34a !important;
+        }
+        .onboarding-lang-radio-dot {
+            width: 10px !important;
+            height: 10px !important;
+            border-radius: 50% !important;
+            background: transparent !important;
+            transition: all 0.18s ease !important;
+        }
+        .onboarding-lang-card.is-selected .onboarding-lang-radio-dot {
+            background: #16a34a !important;
+        }
+
+        .onboarding-lang-info {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 2px !important;
+        }
+        .onboarding-lang-title {
+            font-size: 1.02rem !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+            transition: color 0.15s ease !important;
+        }
+        .onboarding-lang-card.is-selected .onboarding-lang-title {
+            color: #15803d !important;
+        }
+        .onboarding-lang-desc {
+            font-size: 0.82rem !important;
+            color: #64748b !important;
+            font-weight: 500 !important;
+        }
+
+        /* Right-side Indicators: Sprout Icon + Circular Checkmark Badge */
+        .onboarding-lang-right {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            flex-shrink: 0 !important;
+        }
+        .onboarding-sprout-icon {
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.18s ease;
+        }
+        .onboarding-lang-card.is-selected .onboarding-sprout-icon {
+            color: #16a34a;
+        }
+        .onboarding-lang-check {
+            width: 22px !important;
+            height: 22px !important;
+            min-width: 22px !important;
+            border-radius: 50% !important;
+            background: #16a34a !important;
+            color: #ffffff !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            opacity: 0 !important;
+            transform: scale(0.6) !important;
+            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            flex-shrink: 0 !important;
+        }
+        .onboarding-lang-card.is-selected .onboarding-lang-check {
+            opacity: 1 !important;
+            transform: scale(1) !important;
+        }
+
+        /* Stable Physical Dimension Continue Button (NO SCALING) */
+        .onboarding-submit-btn {
+            width: 100% !important;
+            height: 50px !important;
+            min-height: 50px !important;
+            max-height: 50px !important;
+            padding: 0 24px !important;
+            background: #15803d !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 12px !important;
+            font-size: 0.98rem !important;
+            font-weight: 700 !important;
+            font-family: inherit !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 10px !important;
+            cursor: pointer !important;
+            box-shadow: 0 4px 14px rgba(21, 128, 61, 0.25) !important;
+            transition: background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease !important;
+            box-sizing: border-box !important;
+            transform: none !important;
+            outline: none !important;
+            text-decoration: none !important;
+        }
+        .onboarding-submit-btn:hover {
+            background: #14532d !important;
+            box-shadow: 0 6px 18px rgba(21, 128, 61, 0.35) !important;
+            transform: none !important;
+        }
+        .onboarding-submit-btn:active {
+            background: #0f3d20 !important;
+            transform: none !important;
+        }
+        .onboarding-submit-btn:focus-visible {
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.35) !important;
+            transform: none !important;
+        }
+        .onboarding-submit-btn:disabled,
+        .onboarding-submit-btn.is-loading {
+            opacity: 0.82 !important;
+            cursor: wait !important;
+            transform: none !important;
+        }
+        .onboarding-btn-arrow {
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        .onboarding-submit-btn:hover .onboarding-btn-arrow {
+            transform: translateX(3px);
+        }
+    </style>
+</head>
+<body class="onboarding-page-body language-page-body">
+    <!-- Clean Agricultural Foliage Decorative Vector Accents -->
+    <svg class="agri-bg-leaf-tl" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M40 0C40 70 80 120 160 140C90 140 30 100 0 40C0 20 20 0 40 0Z" fill="#15803d" fill-opacity="0.12"/>
+        <path d="M10 20C40 80 90 110 170 110C110 110 50 80 20 30" stroke="#16a34a" stroke-width="2" stroke-opacity="0.25"/>
+        <path d="M70 50C110 70 140 100 150 140C120 120 90 90 70 50Z" fill="#16a34a" fill-opacity="0.10"/>
+    </svg>
+    <svg class="agri-bg-leaf-br" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M160 200C160 130 120 80 40 60C110 60 170 100 200 160C200 180 180 200 160 200Z" fill="#15803d" fill-opacity="0.12"/>
+        <path d="M190 180C160 120 110 90 30 90C90 90 150 120 180 170" stroke="#16a34a" stroke-width="2" stroke-opacity="0.25"/>
+        <path d="M130 150C90 130 60 100 50 60C80 80 110 110 130 150Z" fill="#16a34a" fill-opacity="0.10"/>
+    </svg>
+
+    <main class="onboarding-shell">
+        <section class="onboarding-card language-card">
+            <!-- Brand Lockup -->
+            <div class="onboarding-brand">
+                <div class="onboarding-logo-badge" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                    </svg>
+                </div>
+                <h2 class="onboarding-brand-name">{{ t.app_name }}</h2>
+                <span class="onboarding-brand-sub">{{ t.app_tagline }}</span>
+            </div>
+
+            <!-- Step Progress Indicator: Step 1 of 2 -->
+            <div class="onboarding-step-wrapper" aria-label="Step 1 of 2">
+                <span class="onboarding-step-label">{% if language == 'hi' %}चरण 1 का 2{% elif language == 'mr' %}टप्पा १ पैकी २{% else %}Step 1 of 2{% endif %}</span>
+                <div class="onboarding-step-track">
+                    <span class="onboarding-step-dot active"></span>
+                    <span class="onboarding-step-line step1-line"></span>
+                    <span class="onboarding-step-dot inactive"></span>
+                </div>
+            </div>
+
+            <!-- Headings -->
+            <h1 class="onboarding-heading">
+                {% if language == 'hi' %}अपनी भाषा चुनें{% elif language == 'mr' %}तुमची भाषा निवडा{% else %}Choose Your Language{% endif %}
+            </h1>
+            <p class="onboarding-subheading">
+                {% if language == 'hi' %}कृषि सहायक मंच पर उपयोग करने के लिए अपनी पसंदीदा भाषा का चयन करें।{% elif language == 'mr' %}कृषी सहाय्यक प्लॅटफॉर्मवर वापरण्यासाठी तुमची पसंतीची भाषा निवडा.{% else %}Select the language you want to use across the Krishi Sahayak platform.{% endif %}
+            </p>
+
+            <!-- Language Form -->
+            <form class="onboarding-form language-form" method="post" action="{{ url_for('language_select') }}" id="langForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="onboarding-lang-options" role="radiogroup" aria-label="{{ t.language_title }}">
+                    <!-- English Option -->
+                    <label class="onboarding-lang-card {{ 'is-selected' if language == 'en' or not language else '' }}" data-lang="en">
+                        <input type="radio" name="language" value="en" {% if language == 'en' or not language %}checked{% endif %}>
+                        <div class="onboarding-lang-left">
+                            <div class="onboarding-lang-radio" aria-hidden="true">
+                                <span class="onboarding-lang-radio-dot"></span>
+                            </div>
+                            <div class="onboarding-lang-info">
+                                <strong class="onboarding-lang-title">English</strong>
+                                <span class="onboarding-lang-desc">Default language</span>
+                            </div>
+                        </div>
+                        <div class="onboarding-lang-right">
+                            <span class="onboarding-sprout-icon" aria-hidden="true">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M7 20h10"/>
+                                    <path d="M10 20c5.5-2.5.8-6.4 3-10"/>
+                                    <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8Z"/>
+                                </svg>
+                            </span>
+                            <div class="onboarding-lang-check" aria-hidden="true">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Hindi Option -->
+                    <label class="onboarding-lang-card {{ 'is-selected' if language == 'hi' else '' }}" data-lang="hi">
+                        <input type="radio" name="language" value="hi" {% if language == 'hi' %}checked{% endif %}>
+                        <div class="onboarding-lang-left">
+                            <div class="onboarding-lang-radio" aria-hidden="true">
+                                <span class="onboarding-lang-radio-dot"></span>
+                            </div>
+                            <div class="onboarding-lang-info">
+                                <strong class="onboarding-lang-title">हिन्दी (Hindi)</strong>
+                                <span class="onboarding-lang-desc">भारत की राजभाषा</span>
+                            </div>
+                        </div>
+                        <div class="onboarding-lang-right">
+                            <span class="onboarding-sprout-icon" aria-hidden="true">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M7 20h10"/>
+                                    <path d="M10 20c5.5-2.5.8-6.4 3-10"/>
+                                    <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8Z"/>
+                                </svg>
+                            </span>
+                            <div class="onboarding-lang-check" aria-hidden="true">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Marathi Option -->
+                    <label class="onboarding-lang-card {{ 'is-selected' if language == 'mr' else '' }}" data-lang="mr">
+                        <input type="radio" name="language" value="mr" {% if language == 'mr' %}checked{% endif %}>
+                        <div class="onboarding-lang-left">
+                            <div class="onboarding-lang-radio" aria-hidden="true">
+                                <span class="onboarding-lang-radio-dot"></span>
+                            </div>
+                            <div class="onboarding-lang-info">
+                                <strong class="onboarding-lang-title">मराठी (Marathi)</strong>
+                                <span class="onboarding-lang-desc">महाराष्ट्राची राजभाषा</span>
+                            </div>
+                        </div>
+                        <div class="onboarding-lang-right">
+                            <span class="onboarding-sprout-icon" aria-hidden="true">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M7 20h10"/>
+                                    <path d="M10 20c5.5-2.5.8-6.4 3-10"/>
+                                    <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8Z"/>
+                                </svg>
+                            </span>
+                            <div class="onboarding-lang-check" aria-hidden="true">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Continue Button -->
+                <button class="onboarding-submit-btn" type="submit" id="btnContinueLang">
+                    <span>{{ t.onboarding_next_btn if t.onboarding_next_btn else 'Continue to Account Sign-In' }}</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="onboarding-btn-arrow">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+    document.querySelectorAll('.onboarding-lang-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.onboarding-lang-card').forEach(function(c) {
+                c.classList.remove('is-selected');
+                const radio = c.querySelector('input[type="radio"]');
+                if (radio) radio.checked = false;
+            });
+            card.classList.add('is-selected');
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
+        });
+    });
+    </script>
+</body>
+</html>

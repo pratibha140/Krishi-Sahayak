@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.app_name }} - {{ t.hero_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260917_v3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    {% include "nav.html" %}
+
+    <!-- Full-Screen Hero Section with Background Video -->
+    <section class="hero-section">
+        <div class="hero-video-container">
+            <video class="hero-video" autoplay muted loop playsinline preload="metadata" poster="{{ url_for('static', filename='videos/agrovia-crops-poster.jpg') }}">
+                <source src="{{ url_for('static', filename='videos/agrovia-crops.mp4') }}" type="video/mp4">
+            </video>
+            <div class="hero-overlay"></div>
+        </div>
+
+        <div class="page-content hero-content-grid">
+            <!-- Hero Copy -->
+            <section class="hero-copy">
+                <div class="eyebrow-pill">
+                    <span class="pulse-dot"></span>
+                    <span>{{ t.hero_eyebrow }}</span>
+                </div>
+                <h1 class="hero-heading">{{ t.hero_title }}</h1>
+                <p class="hero-desc">{{ t.hero_text }}</p>
+
+                <div class="hero-actions">
+                    <a class="button primary" href="{{ url_for('calendar') }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                            <line x1="16" x2="16" y1="2" y2="6"/>
+                            <line x1="8" x2="8" y1="2" y2="6"/>
+                            <line x1="3" x2="21" y1="10" y2="10"/>
+                        </svg>
+                        <span>{{ t.hero_primary }}</span>
+                    </a>
+                    <a class="button secondary" href="{{ url_for('weather') }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                        </svg>
+                        <span>{{ t.hero_secondary }}</span>
+                    </a>
+                    <a class="button secondary btn-voice-secondary" href="{{ url_for('voice') }}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" x2="12" y1="19" y2="22"/>
+                        </svg>
+                        <span>{{ t.hero_voice_btn }}</span>
+                    </a>
+                </div>
+
+                <!-- Stats strip -->
+                <div class="hero-stats-strip">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ t.module_count }}</span>
+                        <span class="stat-label">{{ t.module_count_label }}</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ t.language_first }}</span>
+                        <span class="stat-label">{{ t.language_first_label }}</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ t.status }}</span>
+                        <span class="stat-label">{{ t.status_label }}</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Weather Snapshot Widget -->
+            <aside class="hero-weather-card" id="homeWeatherCard">
+                <div class="weather-card-header">
+                    <div class="weather-loc-tag">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary">
+                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span id="homeLocName">{{ default_weather.location_name }}</span>
+                    </div>
+                    <span class="live-badge">LIVE SATELLITE</span>
+                </div>
+
+                <div class="weather-temp-row">
+                    <div class="weather-temp-big">
+                        <span class="temp-val" id="homeTempVal">{{ default_weather.current.temp }}</span><span class="temp-unit">°C</span>
+                    </div>
+                    <div class="weather-icon-large text-primary" id="homeWeatherIcon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2v2"/>
+                            <path d="m4.93 4.93 1.41 1.41"/>
+                            <path d="M20 12h2"/>
+                            <path d="m19.07 4.93-1.41 1.41"/>
+                            <path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/>
+                            <path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="weather-condition-text" id="homeConditionText">
+                    {{ default_weather.current.condition }}
+                </div>
+
+                <!-- Spraying status pill -->
+                <div class="spray-status-banner spray-status-{{ default_weather.advisory.spray.status }}" id="homeSprayBanner">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2 flex-shrink-0">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <div class="spray-info">
+                        <strong id="homeSprayBadge">{{ default_weather.advisory.spray.badge }}</strong>
+                        <span class="spray-sub" id="homeSprayTip">{{ default_weather.advisory.spray.tip }}</span>
+                    </div>
+                </div>
+
+                <!-- Metrics row -->
+                <div class="weather-mini-metrics">
+                    <div class="mini-metric">
+                        <span class="metric-label">{{ t.rain_prob }}</span>
+                        <strong class="metric-val" id="homeRainProb">{{ default_weather.current.rain_prob }}%</strong>
+                    </div>
+                    <div class="mini-metric">
+                        <span class="metric-label">{{ t.humidity }}</span>
+                        <strong class="metric-val" id="homeHumidity">{{ default_weather.current.humidity }}%</strong>
+                    </div>
+                    <div class="mini-metric">
+                        <span class="metric-label">{{ t.wind_speed }}</span>
+                        <strong class="metric-val" id="homeWind">{{ default_weather.current.wind_speed }} km/h</strong>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('weather') }}" class="weather-card-link">
+                    {{ t.view_full_weather }}
+                </a>
+            </aside>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main id="mainContent" class="page-content main-content-wrapper">
+        <!-- Farmer Progress Dashboard Widget -->
+        {% if crop_progress %}
+        <section class="section-card mb-4 mt-4">
+            <div class="section-header-row mb-3">
+                <span class="section-badge">Crop Cycle Tracker</span>
+                <h2>{{ t.progress_widget_title }}</h2>
+            </div>
+            
+            {% for cp in crop_progress %}
+            <div class="progress-tracker-card">
+                <div class="progress-card-header">
+                    <div>
+                        <span class="crop-badge">{{ cp.crop_id.capitalize() }} Field</span>
+                        <h3 class="mt-1">{{ cp.current_stage }} Stage</h3>
+                        <span class="text-muted small">Sowing Date: {{ cp.sowing_date }}</span>
+                    </div>
+                    <div class="progress-header-right">
+                        <a href="{{ url_for('calendar') }}" class="small-link-btn me-3">View Schedule →</a>
+                        <div class="progress-score-circle">
+                            <strong>{{ (cp.tasks_completed / cp.total_tasks * 100) | int }}%</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-bar-track mt-3 mb-2">
+                    <div class="progress-bar-fill" style="width: {{ (cp.tasks_completed / cp.total_tasks * 100) | int }}%;"></div>
+                </div>
+                <div class="progress-meta-strip">
+                    <span>{{ cp.tasks_completed }} of {{ cp.total_tasks }} {{ t.progress_tasks_completed }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        <!-- Feature Modules Grid -->
+        <section class="feature-grid-wrapper">
+            <h2 class="section-title">{{ t.tools_title }}</h2>
+
+            <div class="feature-grid">
+                <!-- Weather Module -->
+                <a class="feature-card card-weather" href="{{ url_for('weather') }}">
+                    <div class="card-top">
+                        <span class="card-icon-box icon-sky">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                            </svg>
+                        </span>
+                        <span class="badge-tag">GPS Live</span>
+                    </div>
+                    <h3>{{ t.weather_title }}</h3>
+                    <p>{{ t.weather_text }}</p>
+                    <span class="card-action-arrow">→</span>
+                </a>
+
+                <!-- Calendar Module -->
+                <a class="feature-card card-calendar" href="{{ url_for('calendar') }}">
+                    <div class="card-top">
+                        <span class="card-icon-box icon-gold">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                                <line x1="16" x2="16" y1="2" y2="6"/>
+                                <line x1="8" x2="8" y1="2" y2="6"/>
+                                <line x1="3" x2="21" y1="10" y2="10"/>
+                            </svg>
+                        </span>
+                        <span class="badge-tag">Dosage Calculator</span>
+                    </div>
+                    <h3>{{ t.calendar_title }}</h3>
+                    <p>{{ t.calendar_text }}</p>
+                    <span class="card-action-arrow">→</span>
+                </a>
+
+                <!-- Soil & Nutrition Module -->
+                <a class="feature-card card-soil" href="{{ url_for('soil') }}">
+                    <div class="card-top">
+                        <span class="card-icon-box icon-green">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 2v7.31"/>
+                                <path d="M14 9.3V1.99"/>
+                                <path d="M8.5 2h7"/>
+                                <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/>
+                            </svg>
+                        </span>
+                        <span class="badge-tag">12 Nutrients</span>
+                    </div>
+                    <h3>{{ t.soil_title }}</h3>
+                    <p>{{ t.soil_text }}</p>
+                    <span class="card-action-arrow">→</span>
+                </a>
+
+                <!-- Crop Explorer Module -->
+                <a class="feature-card card-crops" href="{{ url_for('crops') }}">
+                    <div class="card-top">
+                        <span class="card-icon-box icon-emerald">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M7 20h10"/>
+                                <path d="M10 20c5.5-2.5.8-6.4 3-10"/>
+                                <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8Z"/>
+                            </svg>
+                        </span>
+                        <span class="badge-tag">15+ Crops & POPs</span>
+                    </div>
+                    <h3>{{ t.crops_title }}</h3>
+                    <p>{{ t.crops_text }}</p>
+                    <span class="card-action-arrow">→</span>
+                </a>
+
+                <!-- Disease Module -->
+                <a class="feature-card card-disease" href="{{ url_for('disease') }}">
+                    <div class="card-top">
+                        <span class="card-icon-box icon-purple">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" x2="12" y1="8" y2="16"/>
+                                <line x1="8" x2="16" y1="12" y2="12"/>
+                            </svg>
+                        </span>
+                        <span class="badge-tag">Doctor & Remedies</span>
+                    </div>
+                    <h3>{{ t.disease_title }}</h3>
+                    <p>{{ t.disease_text }}</p>
+                    <span class="card-action-arrow">→</span>
+                </a>
+
+                <!-- Scientific Practices & Safety Module -->
+                <a class="feature-card card-practices" href="{{ url_for('practices') }}">
+                    <div class="card-top">
+                        <span class="card-icon-box icon-orange">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <path d="m9 12 2 2 4-4"/>
+                            </svg>
+                        </span>
+                        <span class="badge-tag">GAP & IPM</span>
+                    </div>
+                    <h3>{{ t.practices_title }}</h3>
+                    <p>{{ t.practices_text }}</p>
+                    <span class="card-action-arrow">→</span>
+                </a>
+
+                <!-- Farmer Services Module -->
+                <a class="feature-card card-services" href="{{ url_for('services') }}">
+                    <div class="card-top">
+                        <span class="card-icon-box icon-blue">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 21h18"/>
+                                <path d="M3 10h18"/>
+                                <path d="M5 6l7-3 7 3"/>
+                                <path d="M4 10v11"/>
+                                <path d="M20 10v11"/>
+                            </svg>
+                        </span>
+                        <span class="badge-tag">KCC 1800-180-1551</span>
+                    </div>
+                    <h3>{{ t.services_title }}</h3>
+                    <p>{{ t.services_text }}</p>
+                    <span class="card-action-arrow">→</span>
+                </a>
+
+                <!-- Voice Assistant Module -->
+                <a class="feature-card card-voice" href="{{ url_for('voice') }}">
+                    <div class="card-top">
+                        <span class="card-icon-box icon-red">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                <line x1="12" x2="12" y1="19" y2="22"/>
+                            </svg>
+                        </span>
+                        <span class="badge-tag">Voice AI</span>
+                    </div>
+                    <h3>{{ t.voice_title }}</h3>
+                    <p>{{ t.voice_text }}</p>
+                    <span class="card-action-arrow">→</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Daily Seasonal Agri Tips -->
+        <section class="daily-tips-section">
+            <div class="section-header-row">
+                <span class="section-badge">Scientific Farm Advisory</span>
+                <h2>{{ t.daily_tips_title }}</h2>
+            </div>
+
+            <div class="tips-grid">
+                <div class="tip-card">
+                    <div class="tip-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                        </svg>
+                    </div>
+                    <div class="tip-content">
+                        <h3>{{ t.daily_tip_1_title }}</h3>
+                        <p>{{ t.daily_tip_1_desc }}</p>
+                    </div>
+                </div>
+
+                <div class="tip-card">
+                    <div class="tip-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <div class="tip-content">
+                        <h3>{{ t.daily_tip_2_title }}</h3>
+                        <p>{{ t.daily_tip_2_desc }}</p>
+                    </div>
+                </div>
+
+                <div class="tip-card">
+                    <div class="tip-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M7 20h10"/>
+                            <path d="M10 20c5.5-2.5.8-6.4 3-10"/>
+                        </svg>
+                    </div>
+                    <div class="tip-content">
+                        <h3>{{ t.daily_tip_3_title }}</h3>
+                        <p>{{ t.daily_tip_3_desc }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <div class="page-content footer-inner">
+            <p>© 2026 <strong>{{ t.app_name }}</strong> · {{ t.app_tagline }}</p>
+            <div class="footer-lang-links">
+                <a href="{{ url_for('set_language', lang_code='en') }}">English</a> ·
+                <a href="{{ url_for('set_language', lang_code='hi') }}">हिन्दी</a> ·
+                <a href="{{ url_for('set_language', lang_code='mr') }}">मराठी</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Check for Geolocation and update live home weather dynamically
+        document.addEventListener('DOMContentLoaded', function() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    const lang = "{{ language }}";
+
+                    fetch(`/api/weather?lat=${lat}&lon=${lon}&lang=${lang}&name=Your Location`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && data.current) {
+                                document.getElementById('homeLocName').textContent = data.location_name || 'Your Location';
+                                document.getElementById('homeTempVal').textContent = data.current.temp;
+                                document.getElementById('homeConditionText').textContent = data.current.condition;
+                                document.getElementById('homeRainProb').textContent = data.current.rain_prob + '%';
+                                document.getElementById('homeHumidity').textContent = data.current.humidity + '%';
+                                document.getElementById('homeWind').textContent = data.current.wind_speed + ' km/h';
+
+                                if (data.advisory && data.advisory.spray) {
+                                    const banner = document.getElementById('homeSprayBanner');
+                                    banner.className = 'spray-status-banner spray-status-' + data.advisory.spray.status;
+                                    document.getElementById('homeSprayBadge').textContent = data.advisory.spray.badge;
+                                    document.getElementById('homeSprayTip').textContent = data.advisory.spray.tip;
+                                }
+                            }
+                        })
+                        .catch(err => console.log('Weather fetch notice:', err));
+                }, function(err) {
+                    console.log('Location permission denied or timed out; standard region shown.');
+                }, { timeout: 7000, maximumAge: 60000 });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.calc_title if t.calc_title else t.calendar_page_title }} - {{ t.app_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260917_v3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    {% include "nav.html" %}
+
+    <main id="mainContent" class="page-content tool-page">
+        <!-- Page Header -->
+        <header class="page-header text-center mb-4">
+            <div class="eyebrow-pill center-pill mb-2">
+                <span class="pulse-dot"></span>
+                <span>{{ t.calendar_page_eyebrow }}</span>
+            </div>
+            <h1>{{ t.calc_title if t.calc_title else 'Farm Profitability Calculator' }}</h1>
+            <p class="max-w-2xl mx-auto text-muted">{{ t.calc_subtitle if t.calc_subtitle else 'Estimate gross returns, cultivation costs, and Benefit-Cost (B:C) Ratio to plan profitable crop seasons.' }}</p>
+        </header>
+
+        <!-- Two-Card Split Layout: Inputs & Results -->
+        <div class="profitability-grid mb-5">
+            <!-- Inputs Card -->
+            <section class="profit-inputs-card">
+                <div class="card-section-header mb-3">
+                    <div class="icon-circle bg-primary-subtle text-primary me-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                    </div>
+                    <h2>{{ t.inputs_card_title if t.inputs_card_title else '1. Farm Inputs & Assumptions' }}</h2>
+                </div>
+
+                <form method="post" action="{{ url_for('calendar') }}" class="crop-calculator-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <!-- Crop Selection -->
+                    <div class="form-group mb-3">
+                        <label for="cropSelect" class="form-label-bold">{{ t.select_crop_label }}</label>
+                        <select name="crop" id="cropSelect" class="form-input">
+                            {% for c_id, c_data in all_crops.items() %}
+                            <option value="{{ c_id }}" {% if selected_crop_id == c_id %}selected{% endif %}>
+                                {{ c_data.names[language] if language in c_data.names else c_data.names.en }} ({{ c_data.season[language] if language in c_data.season else c_data.season.en }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Sowing Date -->
+                    <div class="form-group mb-3">
+                        <label for="sowingDate" class="form-label-bold">{{ t.sowing_date_label }}</label>
+                        <input type="date" name="sowing_date" id="sowingDate" class="form-input" value="{{ entered_sowing_date }}">
+                    </div>
+
+                    <!-- Land Area and Unit -->
+                    <div class="form-row-2 mb-3">
+                        <div class="form-group">
+                            <label for="landSize" class="form-label-bold">{{ t.land_size_label }}</label>
+                            <input type="number" step="0.1" min="0.1" name="land_size" id="landSize" class="form-input" value="{{ entered_land_size or '1' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="landUnit" class="form-label-bold">{{ t.land_unit_label }}</label>
+                            <select name="land_unit" id="landUnit" class="form-input">
+                                <option value="acre" {% if entered_unit == 'acre' %}selected{% endif %}>{{ t.unit_acre }}</option>
+                                <option value="hectare" {% if entered_unit == 'hectare' %}selected{% endif %}>{{ t.unit_hectare }}</option>
+                                <option value="guntha" {% if entered_unit == 'guntha' %}selected{% endif %}>{{ t.unit_guntha }}</option>
+                                <option value="bigha" {% if entered_unit == 'bigha' %}selected{% endif %}>{{ t.unit_bigha }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Expected Yield with Unit Suffix -->
+                    <div class="form-group mb-3">
+                        <label for="yieldInput" class="form-label-bold" id="yieldUnitLabel">{{ t.expected_yield_label if t.expected_yield_label else 'Expected Yield per Acre' }}</label>
+                        <div class="input-suffix-group">
+                            <input type="number" step="0.5" min="1" name="yield_per_acre" id="yieldInput" class="form-input" value="{{ plan.economics.yield_per_acre }}">
+                            <span class="input-suffix-badge">{{ t.unit_quintals if t.unit_quintals else 'Quintals' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Market Price / MSP with Unit Suffix -->
+                    <div class="form-group mb-3">
+                        <label for="priceInput" class="form-label-bold">{{ t.market_price_label if t.market_price_label else 'Market Price / MSP per Quintal' }}</label>
+                        <div class="input-suffix-group">
+                            <span class="input-prefix-badge">₹</span>
+                            <input type="number" step="10" min="100" name="price_per_quintal" id="priceInput" class="form-input" value="{{ plan.economics.price_per_quintal }}">
+                            <span class="input-suffix-badge">/ Quintal</span>
+                        </div>
+                    </div>
+
+                    <!-- Cultivation Cost per Acre -->
+                    <div class="form-group mb-4">
+                        <label for="costInput" class="form-label-bold" id="costUnitLabel">{{ t.total_cost_label if t.total_cost_label else 'Cultivation Cost per Acre' }}</label>
+                        <div class="input-suffix-group">
+                            <span class="input-prefix-badge">₹</span>
+                            <input type="number" step="500" min="1000" name="cost_per_acre" id="costInput" class="form-input" value="{{ plan.economics.cost_per_acre }}">
+                            <span class="input-suffix-badge" id="costUnitSuffix">/ Acre</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="button primary full-width btn-calc-economics">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2" aria-hidden="true">
+                            <rect width="16" height="20" x="4" y="2" rx="2"/>
+                            <line x1="8" x2="16" y1="6" y2="6"/>
+                            <line x1="16" x2="16" y1="14"/>
+                            <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01"/>
+                        </svg>
+                        <span>{{ t.calculate_economics_btn if t.calculate_economics_btn else 'Calculate Farm Economics' }}</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Results Card -->
+            <section class="profit-results-card">
+                <div class="card-section-header mb-3">
+                    <div class="icon-circle bg-success-subtle text-success me-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                    <h2>{{ t.results_card_title if t.results_card_title else '2. Profitability Analysis & B:C Ratio' }}</h2>
+                </div>
+
+                <!-- Hero Metric: Net Profit -->
+                <div class="hero-profit-box {% if plan.economics.net_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %} mb-4">
+                    <span class="hero-profit-label">{{ t.hero_net_profit_label if t.hero_net_profit_label else 'Net Profit / Loss per Acre' }}</span>
+                    <strong class="hero-profit-amount">
+                        {% if plan.economics.net_profit >= 0 %}+₹{{ "{:,}".format(plan.economics.net_profit_per_acre) }}{% else %}-₹{{ "{:,}".format(plan.economics.net_profit_per_acre | abs) }}{% endif %}
+                    </strong>
+                    <span class="hero-profit-subtext">Total Estimated Net: ₹{{ "{:,}".format(plan.economics.net_profit) }} for {{ plan.acres_calculated }} {{ t.unit_acre }}</span>
+                </div>
+
+                <!-- B:C Ratio Status Chip -->
+                <div class="bc-ratio-card mb-4">
+                    <div class="bc-ratio-header">
+                        <span class="bc-title">{{ t.bc_ratio_label if t.bc_ratio_label else 'Benefit-Cost (B:C) Ratio' }}</span>
+                        <span class="bc-value-badge">{{ plan.economics.bc_ratio }}</span>
+                    </div>
+
+                    {% if plan.economics.bc_status == 'healthy' %}
+                    <div class="bc-status-chip status-healthy">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <span>{{ t.status_healthy_profit if t.status_healthy_profit else 'Healthy Profit Margin (B:C > 1.25)' }}</span>
+                    </div>
+                    {% elif plan.economics.bc_status == 'low_margin' %}
+                    <div class="bc-status-chip status-warning">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span>{{ t.status_low_margin if t.status_low_margin else 'Low Margin / Risk (B:C 1.0 - 1.25)' }}</span>
+                    </div>
+                    {% else %}
+                    <div class="bc-status-chip status-danger">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                        <span>{{ t.status_loss_risk if t.status_loss_risk else 'Unprofitable / Loss Risk (B:C < 1.0)' }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Supporting Stats Grid -->
+                <div class="secondary-stats-grid">
+                    <div class="stat-card-item">
+                        <span class="stat-item-label">{{ t.gross_revenue_label if t.gross_revenue_label else 'Gross Revenue' }}</span>
+                        <strong class="stat-item-val text-success">₹{{ "{:,}".format(plan.economics.gross_revenue) }}</strong>
+                        <span class="stat-item-sub">{{ plan.economics.total_yield }} Quintals total yield</span>
+                    </div>
+
+                    <div class="stat-card-item">
+                        <span class="stat-item-label">{{ t.cultivation_cost_total_label if t.cultivation_cost_total_label else 'Total Cultivation Cost' }}</span>
+                        <strong class="stat-item-val text-secondary">₹{{ "{:,}".format(plan.economics.total_cost) }}</strong>
+                        <span class="stat-item-sub">₹{{ "{:,}".format(plan.economics.cost_per_acre) }} / Acre</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Plan Summary & Fertilizer Schedule -->
+        <section class="plan-output-panel">
+            <!-- Summary Header Banner -->
+            <div class="plan-summary-banner mb-4">
+                <div class="summary-meta-item">
+                    <span class="meta-label">{{ plan.crop.names[language] if language in plan.crop.names else plan.crop.names.en }}</span>
+                    <strong class="meta-val">{{ plan.acres_calculated }} {{ t.unit_acre }}</strong>
+                </div>
+                <div class="summary-meta-item">
+                    <span class="meta-label">{{ t.sowing_date_label }}</span>
+                    <strong class="meta-val">{{ plan.sowing_date }}</strong>
+                </div>
+                <div class="summary-meta-item">
+                    <span class="meta-label">{{ t.est_harvest_date }}</span>
+                    <strong class="meta-val highlight-gold">{{ plan.harvest_date }}</strong>
+                </div>
+            </div>
+
+            <!-- Fertilizer Dosages Card -->
+            <div class="fertilizer-card mb-4">
+                <div class="fertilizer-card-header">
+                    <div>
+                        <h3 class="fert-title">{{ t.fertilizer_req_title }}</h3>
+                        <p class="fert-sub">{{ t.fertilizer_note }}</p>
+                    </div>
+                </div>
+
+                <div class="fertilizer-grid">
+                    {% if 'urea' in plan.fertilizers %}
+                    <div class="fert-pill">
+                        <span class="fert-name">{{ t.fertilizer_urea }}</span>
+                        <strong class="fert-kg">{{ plan.fertilizers.urea }} kg</strong>
+                    </div>
+                    {% endif %}
+
+                    {% if 'dap' in plan.fertilizers %}
+                    <div class="fert-pill">
+                        <span class="fert-name">{{ t.fertilizer_dap }}</span>
+                        <strong class="fert-kg">{{ plan.fertilizers.dap }} kg</strong>
+                    </div>
+                    {% endif %}
+
+                    {% if 'mop' in plan.fertilizers %}
+                    <div class="fert-pill">
+                        <span class="fert-name">{{ t.fertilizer_mop }}</span>
+                        <strong class="fert-kg">{{ plan.fertilizers.mop }} kg</strong>
+                    </div>
+                    {% endif %}
+
+                    {% if 'zinc_sulphate' in plan.fertilizers %}
+                    <div class="fert-pill">
+                        <span class="fert-name">{{ t.fertilizer_zinc }}</span>
+                        <strong class="fert-kg">{{ plan.fertilizers.zinc_sulphate }} kg</strong>
+                    </div>
+                    {% endif %}
+
+                    {% if 'sulphur' in plan.fertilizers %}
+                    <div class="fert-pill">
+                        <span class="fert-name">{{ t.fertilizer_sulphur }}</span>
+                        <strong class="fert-kg">{{ plan.fertilizers.sulphur }} kg</strong>
+                    </div>
+                    {% endif %}
+
+                    {% if 'fym_tonnes' in plan.fertilizers %}
+                    <div class="fert-pill">
+                        <span class="fert-name">{{ t.fertilizer_fym }}</span>
+                        <strong class="fert-kg">{{ plan.fertilizers.fym_tonnes }} Tonnes</strong>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Milestone Timeline -->
+            <div class="timeline-container">
+                <div class="timeline-header-row mb-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="timeline-title mb-1">{{ t.timeline_title }}</h3>
+                        <p class="fert-sub text-muted">{{ t.timeline_sub if t.timeline_sub else 'Day-by-day task & cultivation schedule' }}</p>
+                    </div>
+                    <button type="button" class="button secondary btn-print" onclick="window.print()" aria-label="{{ t.print_schedule_btn }}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+                            <polyline points="6 9 6 2 18 2 18 9"/>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                            <rect width="12" height="8" x="6" y="14"/>
+                        </svg>
+                        <span>{{ t.print_schedule_btn }}</span>
+                    </button>
+                </div>
+
+                <div class="milestone-timeline">
+                    {% for ms in plan.milestones %}
+                    <div class="timeline-step">
+                        <div class="timeline-node">
+                            <span class="step-num">{{ loop.index }}</span>
+                        </div>
+                        <div class="timeline-content-card">
+                            <div class="step-header">
+                                <div>
+                                    <div class="step-meta-row d-flex align-items-center gap-2 mb-1">
+                                        <span class="step-tag">Phase {{ loop.index }}</span>
+                                        <span class="step-date-range">{{ ms.start_date }} → {{ ms.end_date }} ({{ ms.day_range }})</span>
+                                    </div>
+                                    <h4 class="step-title">{{ ms.stage[language] if language in ms.stage else ms.stage.en }}</h4>
+                                </div>
+                            </div>
+                            <p class="step-task">{{ ms.task[language] if language in ms.task else ms.task.en }}</p>
+                            
+                            {% if ms.water_advice and (language in ms.water_advice or 'en' in ms.water_advice) %}
+                            <div class="water-callout">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1 text-info">
+                                    <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>
+                                </svg>
+                                <span><strong>{{ t.water_advisory_badge }}:</strong> {{ ms.water_advice[language] if language in ms.water_advice else ms.water_advice.en }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <div class="page-content footer-inner">
+            <p>© 2026 <strong>{{ t.app_name }}</strong> · {{ t.app_tagline }}</p>
+            <div class="footer-lang-links">
+                <a href="{{ url_for('set_language', lang_code='en') }}">English</a> ·
+                <a href="{{ url_for('set_language', lang_code='hi') }}">हिन्दी</a> ·
+                <a href="{{ url_for('set_language', lang_code='mr') }}">मराठी</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('sowingDate');
+            if (dateInput && !dateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+
+            // UIUX-01: Synchronize profitability calculator unit labels with #landUnit
+            const landUnitSelect = document.getElementById('landUnit');
+            const yieldUnitLabel = document.getElementById('yieldUnitLabel');
+            const costUnitLabel = document.getElementById('costUnitLabel');
+            const costUnitSuffix = document.getElementById('costUnitSuffix');
+            const currentLang = "{{ language }}";
+
+            const unitMap = {
+                en: {
+                    acre: { yield: 'Expected Yield per Acre', cost: 'Cultivation Cost per Acre', suffix: '/ Acre' },
+                    hectare: { yield: 'Expected Yield per Hectare', cost: 'Cultivation Cost per Hectare', suffix: '/ Hectare' },
+                    guntha: { yield: 'Expected Yield per Guntha', cost: 'Cultivation Cost per Guntha', suffix: '/ Guntha' },
+                    bigha: { yield: 'Expected Yield per Bigha', cost: 'Cultivation Cost per Bigha', suffix: '/ Bigha' }
+                },
+                hi: {
+                    acre: { yield: 'प्रति एकड़ अनुमानित उत्पादन', cost: 'प्रति एकड़ कुल खेती लागत', suffix: '/ एकड़' },
+                    hectare: { yield: 'प्रति हेक्टेयर अनुमानित उत्पादन', cost: 'प्रति हेक्टेयर कुल खेती लागत', suffix: '/ हेक्टेयर' },
+                    guntha: { yield: 'प्रति गुंठा अनुमानित उत्पादन', cost: 'प्रति गुंठा कुल खेती लागत', suffix: '/ गुंठा' },
+                    bigha: { yield: 'प्रति बीघा अनुमानित उत्पादन', cost: 'प्रति बीघा कुल खेती लागत', suffix: '/ बीघा' }
+                },
+                mr: {
+                    acre: { yield: 'प्रति एकर अपेक्षित उत्पादन', cost: 'प्रति एकर एकूण लागवड खर्च', suffix: '/ एकर' },
+                    hectare: { yield: 'प्रति हेक्टर अपेक्षित उत्पादन', cost: 'प्रति हेक्टर एकूण लागवड खर्च', suffix: '/ हेक्टर' },
+                    guntha: { yield: 'प्रति गुंठा अपेक्षित उत्पादन', cost: 'प्रति गुंठा एकूण लागवड खर्च', suffix: '/ गुंठा' },
+                    bigha: { yield: 'प्रति बीघा अपेक्षित उत्पादन', cost: 'प्रति बीघा एकूण लागवड खर्च', suffix: '/ बीघा' }
+                }
+            };
+
+            function updateUnitLabels(unit) {
+                const langConfig = unitMap[currentLang] || unitMap.en;
+                const config = langConfig[unit] || langConfig.acre;
+
+                if (yieldUnitLabel) {
+                    yieldUnitLabel.textContent = config.yield;
+                }
+                if (costUnitLabel) {
+                    costUnitLabel.textContent = config.cost;
+                }
+                if (costUnitSuffix) {
+                    costUnitSuffix.textContent = config.suffix;
+                }
+            }
+
+            if (landUnitSelect) {
+                landUnitSelect.addEventListener('change', function() {
+                    updateUnitLabels(this.value);
+                });
+                if (landUnitSelect.value && landUnitSelect.value !== 'acre') {
+                    updateUnitLabels(landUnitSelect.value);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

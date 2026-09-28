@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.voice_page_title }} - {{ t.app_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260917_v3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ── Web Speech API Unsupported Card (UIUX-03) ───────────────── */
+        .speech-unsupported-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 18px;
+            background: #fffbeb;
+            border-left: 5px solid #f59e0b;
+            border-radius: var(--r-md, 12px);
+            margin-bottom: 20px;
+            font-size: var(--fs-sm, 14px);
+            color: #92400e;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            text-align: left;
+        }
+        .speech-unsupported-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .speech-unsupported-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .speech-unsupported-text {
+            line-height: 1.45;
+        }
+        .speech-unsupported-text strong {
+            display: block;
+            margin-bottom: 2px;
+            color: #78350f;
+            font-size: 14px;
+        }
+        .speech-unsupported-actions {
+            flex-shrink: 0;
+        }
+        .speech-unsupported-btn {
+            background: #d97706;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--r-sm, 8px);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: background 0.15s ease;
+        }
+        .speech-unsupported-btn:hover {
+            background: #b45309;
+        }
+        .mic-active-btn.mic-disabled,
+        .mic-active-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            filter: grayscale(0.8);
+            box-shadow: none !important;
+        }
+        @media (max-width: 640px) {
+            .speech-unsupported-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .speech-unsupported-actions {
+                width: 100%;
+            }
+            .speech-unsupported-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include "nav.html" %}
+
+    <main id="mainContent" class="page-content tool-page voice-page">
+        <!-- Page Header -->
+        <header class="page-header text-center">
+            <div class="eyebrow-pill">
+                <span class="pulse-dot"></span>
+                <span>{{ t.voice_page_eyebrow }}</span>
+            </div>
+            <h1>{{ t.voice_page_title }}</h1>
+            <p>{{ t.voice_page_subtitle }}</p>
+        </header>
+
+        <div class="voice-console-shell">
+            <!-- Central Microphone Control Card -->
+            <section class="voice-main-card">
+                <!-- Language Selector Chips -->
+                <div class="filter-chips-row justify-content-center mb-3">
+                    <a href="{{ url_for('set_language', lang_code='en') }}" class="filter-chip-btn {{ 'active' if language == 'en' else '' }}">English</a>
+                    <a href="{{ url_for('set_language', lang_code='hi') }}" class="filter-chip-btn {{ 'active' if language == 'hi' else '' }}">हिंदी</a>
+                    <a href="{{ url_for('set_language', lang_code='mr') }}" class="filter-chip-btn {{ 'active' if language == 'mr' else '' }}">मराठी</a>
+                </div>
+
+                <!-- Unsupported Browser Speech Recognition Fallback Card (UIUX-03) -->
+                <div id="speechUnsupportedCard" class="speech-unsupported-card" role="status" aria-live="polite" style="display: none;">
+                    <div class="speech-unsupported-content">
+                        <span class="speech-unsupported-icon" aria-hidden="true">🎙️⚠️</span>
+                        <div class="speech-unsupported-text">
+                            <strong>
+                                {% if language == 'hi' %}
+                                    इस ब्राउज़र में आवाज़ पहचान उपलब्ध नहीं है
+                                {% elif language == 'mr' %}
+                                    या ब्राउझरमध्ये आवाज ओळख उपलब्ध नाही
+                                {% else %}
+                                    Voice recognition is unavailable in this browser
+                                {% endif %}
+                            </strong>
+                            <span>
+                                {% if language == 'hi' %}
+                                    आप नीचे टाइप करके अपना प्रश्न पूछ सकते हैं, या आवाज़ के लिए Chrome/Edge का उपयोग करें।
+                                {% elif language == 'mr' %}
+                                    आपण खाली टाइप करून आपला प्रश्न विचारू शकता किंवा आवाजासाठी Chrome/Edge वापरा.
+                                {% else %}
+                                    {{ t.speech_not_supported }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="speech-unsupported-actions">
+                        <button type="button" id="btnFocusTextFallback" class="speech-unsupported-btn" onclick="focusTextInput()">
+                            ✍️ 
+                            {% if language == 'hi' %}
+                                टाइप करके पूछें
+                            {% elif language == 'mr' %}
+                                टाइप करून विचारा
+                            {% else %}
+                                Type Your Question
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="voice-status-label" id="voiceStatusLabel">
+                    {% if language == 'hi' %}
+                        🎙️ माइक्रोफोन दबाएं और बोलें
+                    {% elif language == 'mr' %}
+                        🎙️ मायक्रोफोन दाबा आणि बोला
+                    {% else %}
+                        🎙️ Tap the microphone and speak naturally
+                    {% endif %}
+                </div>
+
+                <div class="mic-button-wrapper">
+                    <!-- Glowing sound rings -->
+                    <div class="mic-wave-ring ring-1" id="waveRing1"></div>
+                    <div class="mic-wave-ring ring-2" id="waveRing2"></div>
+
+                    <button type="button" class="mic-active-btn" id="mainMicBtn" aria-label="Toggle Voice Recording">
+                        <svg id="micSvgGlyph" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" x2="12" y1="19" y2="22"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Animated Audio Waveform -->
+                <div class="waveform-container" id="waveformBarContainer" style="display: none;">
+                    <span class="wave-bar"></span>
+                    <span class="wave-bar"></span>
+                    <span class="wave-bar"></span>
+                    <span class="wave-bar"></span>
+                    <span class="wave-bar"></span>
+                    <span class="wave-bar"></span>
+                    <span class="wave-bar"></span>
+                </div>
+
+                <div class="speech-live-text" id="interimTranscript"></div>
+
+                <!-- Error Fallback Container -->
+                <div id="voiceErrorBox" class="voice-error-card" style="display: none;">
+                    <p class="mb-2"><strong>{% if language == 'hi' %}क्षमा करें, आवाज़ समझ नहीं आई{% elif language == 'mr' %}माफ करा, आवाज समजला नाही{% else %}Sorry, I couldn't understand that.{% endif %}</strong></p>
+                    <div class="d-flex gap-2 flex-wrap justify-content-center">
+                        <button type="button" class="button secondary small py-1" onclick="retryListening()">{% if language == 'hi' %}पुनः प्रयास करें{% elif language == 'mr' %}पुन्हा प्रयत्न करा{% else %}Try Again{% endif %}</button>
+                        <button type="button" class="button secondary small py-1" onclick="focusTextInput()">{% if language == 'hi' %}टाइप करके पूछें{% elif language == 'mr' %}टाइप करून विचारा{% else %}Type Question{% endif %}</button>
+                    </div>
+                </div>
+
+                <!-- Voice Output Toggle -->
+                <div class="voice-controls-row mt-3">
+                    <label class="toggle-control">
+                        <input type="checkbox" id="chkReadAloud" checked>
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">{{ t.read_aloud_label }}</span>
+                    </label>
+
+                    <button type="button" class="button secondary btn-stop-audio" id="btnStopAudio" style="display: none;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        </svg>
+                        <span>{{ t.mic_btn_stop }}</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Quick Suggested Questions Chips -->
+            <section class="voice-suggestions-card">
+                <h2 class="suggestions-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                        <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+                        <path d="M9 18h6"/>
+                        <path d="M10 22h4"/>
+                    </svg>
+                    {{ t.suggested_questions_title }}
+                </h2>
+                <div class="chips-flex" id="suggestionsContainer">
+                    {% if language == 'hi' %}
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('गेहूं में कौन सा उर्वरक डालें?')">गेहूं में कौन सा उर्वरक डालें?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('पत्तियां पीली क्यों हो रही हैं?')">पत्तियां पीली क्यों हो रही हैं?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('फसल की सिंचाई कब करें?')">फसल की सिंचाई कब करें?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('कौन सी सरकारी योजनाएं उपलब्ध हैं?')">कौन सी सरकारी योजनाएं उपलब्ध हैं?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('आज का मौसम कैसा रहेगा?')">आज का मौसम कैसा रहेगा?</button>
+                    {% elif language == 'mr' %}
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('गव्हासाठी कोणते खत वापरावे?')">गव्हासाठी कोणते खत वापरावे?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('पाने पिवळी का पडत आहेत?')">पाने पिवळी का पडत आहेत?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('पिकाला पाणी कधी द्यावे?')">पिकाला पाणी कधी द्यावे?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('कोणत्या शासकीय योजना उपलब्ध आहेत?')">कोणत्या शासकीय योजना उपलब्ध आहेत?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('आजचे हवामान कसे राहील?')">आजचे हवामान कसे राहील?</button>
+                    {% else %}
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('What fertilizer should I use for wheat?')">What fertilizer should I use for wheat?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('Why are my leaves turning yellow?')">Why are my leaves turning yellow?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('When should I irrigate my crop?')">When should I irrigate my crop?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('What government schemes can I apply for?')">What government schemes can I apply for?</button>
+                        <button type="button" class="suggestion-chip" onclick="askQuestion('What is the weather forecast today?')">What is the weather forecast today?</button>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Chat / Conversation History Stream -->
+            <section class="conversation-stream-card">
+                <div class="chat-card-header">
+                    <h2 class="chat-card-title fs-5 fw-bold mb-0">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        {{ t.chat_history_title }}
+                    </h2>
+                    <button type="button" class="btn-clear-chat" onclick="clearChat()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        {{ t.clear_chat_btn }}
+                    </button>
+                </div>
+
+                <div class="chat-messages" id="chatMessages" role="log" aria-live="polite">
+                    <!-- Initial Welcome Message -->
+                    <div class="chat-bubble assistant-bubble">
+                        <div class="bubble-avatar">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                            </svg>
+                        </div>
+                        <div class="bubble-body">
+                            {% if language == 'hi' %}
+                                <p><strong>नमस्ते किसान मित्र!</strong> मैं कृषि सहायक आवाज़ सहायक हूँ। आप मुझसे मौसम, खाद, फसल रोग या योजनाओं के बारे में पूछ सकते हैं।</p>
+                            {% elif language == 'mr' %}
+                                <p><strong>नमस्कार शेतकरी मित्रा!</strong> मी कृषी सहाय्यक आवाज सहाय्यक आहे. हवामान, खत नियोजन, कीड नियंत्रण किंवा योजनांबद्दल प्रश्न विचारा.</p>
+                            {% else %}
+                                <p><strong>Welcome to Krishi Sahayak Voice Assistant!</strong> Ask me about crop nutrition, weather, pest remedies, or government schemes.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Input Fallback Bar -->
+                <form class="voice-text-form" id="voiceTextForm" onsubmit="handleTextSubmit(event)">
+                    <input type="text" id="txtQueryInput" class="voice-text-input" placeholder="{{ t.voice_input_type_placeholder }}" autocomplete="off">
+                    <button type="submit" class="button primary btn-send">
+                        <span>{{ t.voice_send_btn }}</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                    </button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div class="page-content footer-inner">
+            <p>© 2026 <strong>{{ t.app_name }}</strong> · {{ t.app_tagline }}</p>
+            <div class="footer-lang-links">
+                <a href="{{ url_for('set_language', lang_code='en') }}">English</a> ·
+                <a href="{{ url_for('set_language', lang_code='hi') }}">हिन्दी</a> ·
+                <a href="{{ url_for('set_language', lang_code='mr') }}">मराठी</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const CURRENT_LANG = "{{ language }}";
+        const T_READ_ALOUD = "{{ t.read_aloud_label }}";
+        const T_MIC_HINT = "{{ t.mic_hint }}";
+        let isRecording = false;
+        let recognition = null;
+        let currentUtterance = null;
+        let availableVoices = [];
+
+        // Load voices for speech synthesis across Marathi, Hindi, and English
+        function loadVoices() {
+            if ('speechSynthesis' in window) {
+                availableVoices = window.speechSynthesis.getVoices();
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            loadVoices();
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        function getBestVoiceForLang(langCode) {
+            if (!availableVoices.length) loadVoices();
+
+            // 1. Marathi (mr-IN / Marathi)
+            if (langCode === 'mr') {
+                const mrVoice = availableVoices.find(v => v.lang === 'mr-IN' || v.lang === 'mr' || v.name.toLowerCase().includes('marathi'));
+                if (mrVoice) return mrVoice;
+                // Natural fallback for Marathi: Hindi Indian voice (native Devanagari phonetics)
+                const hiVoice = availableVoices.find(v => v.lang === 'hi-IN' || v.lang === 'hi' || v.name.toLowerCase().includes('hindi'));
+                if (hiVoice) return hiVoice;
+            }
+
+            // 2. Hindi (hi-IN / Hindi)
+            if (langCode === 'hi') {
+                const hiVoice = availableVoices.find(v => v.lang === 'hi-IN' || v.lang === 'hi' || v.name.toLowerCase().includes('hindi') || v.name.toLowerCase().includes('india'));
+                if (hiVoice) return hiVoice;
+            }
+
+            // 3. English (en-IN / English)
+            if (langCode === 'en') {
+                const enInVoice = availableVoices.find(v => v.lang === 'en-IN' || (v.lang.startsWith('en') && v.name.toLowerCase().includes('india')));
+                if (enInVoice) return enInVoice;
+                const enVoice = availableVoices.find(v => v.lang.startsWith('en'));
+                if (enVoice) return enVoice;
+            }
+
+            return null;
+        }
+
+        // Initialize Speech Recognition if supported
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+
+            // Map app language code to speech locale
+            if (CURRENT_LANG === 'hi') {
+                recognition.lang = 'hi-IN';
+            } else if (CURRENT_LANG === 'mr') {
+                recognition.lang = 'mr-IN';
+            } else {
+                recognition.lang = 'en-IN';
+            }
+
+            recognition.onstart = function() {
+                isRecording = true;
+                setMicVisualState('listening');
+                document.getElementById('voiceStatusLabel').textContent = "{{ t.mic_btn_listening }}";
+                document.getElementById('waveformBarContainer').style.display = 'flex';
+                document.getElementById('interimTranscript').textContent = '';
+            };
+
+            recognition.onresult = function(event) {
+                let interim = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+
+                document.getElementById('interimTranscript').textContent = interim || finalTranscript;
+
+                if (finalTranscript) {
+                    askQuestion(finalTranscript);
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.log('Speech recognition event:', event.error);
+                stopListening();
+                const errBox = document.getElementById('voiceErrorBox');
+                if (errBox) errBox.style.display = 'block';
+                document.getElementById('voiceStatusLabel').textContent = "{{ t.mic_hint }}";
+            };
+
+            recognition.onend = function() {
+                stopListening();
+            };
+        } else {
+            // Web Speech API unsupported in current browser (UIUX-03)
+            const unsupportedCard = document.getElementById('speechUnsupportedCard');
+            if (unsupportedCard) {
+                unsupportedCard.style.display = 'flex';
+            }
+            const micBtnElem = document.getElementById('mainMicBtn');
+            if (micBtnElem) {
+                micBtnElem.disabled = true;
+                micBtnElem.setAttribute('aria-disabled', 'true');
+                micBtnElem.classList.add('mic-disabled');
+                micBtnElem.setAttribute('title', "{{ t.speech_not_supported }}");
+            }
+        }
+
+        function retryListening() {
+            const errBox = document.getElementById('voiceErrorBox');
+            if (errBox) errBox.style.display = 'none';
+            const micBtn = document.getElementById('mainMicBtn');
+            if (micBtn) micBtn.click();
+        }
+
+        function focusTextInput() {
+            const errBox = document.getElementById('voiceErrorBox');
+            if (errBox) errBox.style.display = 'none';
+            const txtInput = document.getElementById('txtQueryInput');
+            if (txtInput) {
+                txtInput.focus();
+                txtInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        const btnFocusText = document.getElementById('btnFocusTextFallback');
+        if (btnFocusText) {
+            btnFocusText.addEventListener('click', function() {
+                focusTextInput();
+            });
+        }
+
+        const micBtn = document.getElementById('mainMicBtn');
+        if (micBtn) {
+            micBtn.addEventListener('click', function(e) {
+                if (!recognition) {
+                    if (e) e.preventDefault();
+                    const unsupportedCard = document.getElementById('speechUnsupportedCard');
+                    if (unsupportedCard) {
+                        unsupportedCard.style.display = 'flex';
+                        unsupportedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    focusTextInput();
+                    return;
+                }
+                if (isRecording) {
+                    recognition.stop();
+                    stopListening();
+                } else {
+                    stopSpeaking();
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        recognition.stop();
+                    }
+                }
+            });
+        }
+
+        function stopListening() {
+            isRecording = false;
+            setMicVisualState('idle');
+            document.getElementById('waveformBarContainer').style.display = 'none';
+        }
+
+        function setMicVisualState(state) {
+            const btn = document.getElementById('mainMicBtn');
+            const ring1 = document.getElementById('waveRing1');
+            const ring2 = document.getElementById('waveRing2');
+
+            if (state === 'listening') {
+                btn.className = 'mic-active-btn state-listening';
+                ring1.className = 'mic-wave-ring ring-1 active-ring';
+                ring2.className = 'mic-wave-ring ring-2 active-ring';
+            } else if (state === 'speaking') {
+                btn.className = 'mic-active-btn state-speaking';
+                ring1.className = 'mic-wave-ring ring-1 speaking-ring';
+                ring2.className = 'mic-wave-ring ring-2 speaking-ring';
+            } else {
+                btn.className = 'mic-active-btn state-idle';
+                ring1.className = 'mic-wave-ring ring-1';
+                ring2.className = 'mic-wave-ring ring-2';
+            }
+        }
+
+        // Query processing
+        function askQuestion(queryText) {
+            if (!queryText || !queryText.trim()) return;
+
+            stopListening();
+            stopSpeaking();
+
+            document.getElementById('interimTranscript').textContent = '';
+            document.getElementById('voiceStatusLabel').textContent = "{{ t.mic_btn_processing }}";
+
+            // Append user message bubble
+            appendMessage('user', queryText);
+
+            // Send to Backend API
+            fetch('/api/voice-assistant', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+                body: JSON.stringify({
+                    query: queryText,
+                    lang: CURRENT_LANG,
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('voiceStatusLabel').textContent = "{{ t.mic_hint }}";
+
+                // Append assistant bubble
+                appendMessage('assistant', data.text, data.speak_text);
+
+                // Update follow-up suggestions
+                if (data.suggestions && data.suggestions.length > 0) {
+                    updateSuggestions(data.suggestions);
+                }
+
+                // Speak response in chosen language (Marathi, Hindi, English)
+                const readAloud = document.getElementById('chkReadAloud').checked;
+                if (readAloud && data.speak_text) {
+                    speakText(data.speak_text);
+                }
+            })
+            .catch(err => {
+                document.getElementById('voiceStatusLabel').textContent = "{{ t.mic_hint }}";
+                appendMessage('assistant', 'Error communicating with agricultural assistant. Please try again.');
+            });
+        }
+
+        function handleTextSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('txtQueryInput');
+            const val = input.value.trim();
+            if (val) {
+                askQuestion(val);
+                input.value = '';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function appendMessage(sender, rawText, speakableText) {
+            const container = document.getElementById('chatMessages');
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${sender}-bubble`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'bubble-avatar';
+            if (sender === 'user') {
+                avatar.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+            } else {
+                avatar.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>`;
+            }
+
+            const body = document.createElement('div');
+            body.className = 'bubble-body';
+
+            // Safe HTML escaping before markdown parsing to prevent DOM XSS
+            const safeText = escapeHtml(rawText);
+
+            // Simple Markdown parser for bold and line breaks
+            let formatted = safeText
+                .replace(/^### (.*$)/gim, '<h4>$1</h4>')
+                .replace(/^## (.*$)/gim, '<h3>$1</h3>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, '<br>');
+
+            body.innerHTML = formatted;
+
+            if (sender === 'assistant' && speakableText) {
+                const replayBtn = document.createElement('button');
+                replayBtn.className = 'btn-replay-audio';
+                    replayBtn.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                    </svg>
+                    <span>${T_READ_ALOUD}</span>
+                `;
+                replayBtn.onclick = () => speakText(speakableText);
+                body.appendChild(replayBtn);
+            }
+
+            bubble.appendChild(avatar);
+            bubble.appendChild(body);
+            container.appendChild(bubble);
+
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) return;
+
+            stopSpeaking();
+
+            // Strip markdown, bullet characters, and extra spaces for clear articulation
+            const cleanText = text
+                .replace(/[*#_`~•→]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            if (!cleanText) return;
+
+            currentUtterance = new SpeechSynthesisUtterance(cleanText);
+            
+            // Set language locale
+            if (CURRENT_LANG === 'hi') {
+                currentUtterance.lang = 'hi-IN';
+            } else if (CURRENT_LANG === 'mr') {
+                currentUtterance.lang = 'mr-IN';
+            } else {
+                currentUtterance.lang = 'en-IN';
+            }
+
+            // Assign best matched voice if available
+            const matchedVoice = getBestVoiceForLang(CURRENT_LANG);
+            if (matchedVoice) {
+                currentUtterance.voice = matchedVoice;
+            }
+
+            currentUtterance.rate = 0.90;
+            currentUtterance.pitch = 1.0;
+            currentUtterance.volume = 1.0;
+
+            currentUtterance.onstart = function() {
+                setMicVisualState('speaking');
+                document.getElementById('voiceStatusLabel').textContent = "{{ t.mic_btn_speaking }}";
+                document.getElementById('btnStopAudio').style.display = 'inline-flex';
+                document.getElementById('waveformBarContainer').style.display = 'flex';
+            };
+
+            currentUtterance.onend = function() {
+                stopSpeakingVisuals();
+            };
+
+            currentUtterance.onerror = function() {
+                stopSpeakingVisuals();
+            };
+
+            window.speechSynthesis.speak(currentUtterance);
+        }
+
+        function stopSpeaking() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            stopSpeakingVisuals();
+        }
+
+        function stopSpeakingVisuals() {
+            setMicVisualState('idle');
+            document.getElementById('voiceStatusLabel').textContent = "{{ t.mic_hint }}";
+            document.getElementById('btnStopAudio').style.display = 'none';
+            document.getElementById('waveformBarContainer').style.display = 'none';
+        }
+
+        document.getElementById('btnStopAudio').addEventListener('click', stopSpeaking);
+
+        function updateSuggestions(suggestions) {
+            const container = document.getElementById('suggestionsContainer');
+            container.innerHTML = '';
+            suggestions.forEach(s => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'suggestion-chip';
+                btn.textContent = s;
+                btn.onclick = () => askQuestion(s);
+                container.appendChild(btn);
+            });
+        }
+
+        function clearChat() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = '';
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.soil_page_title }} - {{ t.app_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260917_v3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    {% include "nav.html" %}
+
+    <main id="mainContent" class="page-content tool-page">
+        <!-- Page Header -->
+        <header class="page-header text-center">
+            <div class="eyebrow-pill">
+                <span class="pulse-dot"></span>
+                <span>{{ t.soil_page_eyebrow }}</span>
+            </div>
+            <h1>{{ t.soil_page_title }}</h1>
+            <p>{{ t.soil_page_subtitle }}</p>
+        </header>
+
+        <!-- Section 1: 12 Nutrient Deficiency Diagnostics -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Nutrient Diagnostics</span>
+                <h2>{{ t.soil_deficiency_heading }}</h2>
+                <p class="text-muted">{{ t.soil_deficiency_sub }}</p>
+            </div>
+
+            <div class="nutrient-grid">
+                {% for nut in (nutrient_deficiencies or deficiencies or []) %}
+                <div class="nutrient-card" id="nutrient-{{ nut.id }}">
+                    <div class="nutrient-badge">{{ nut.name[language] if language in nut.name else nut.name.en }}</div>
+                    <h3 class="nutrient-title">{{ nut.name[language] if language in nut.name else nut.name.en }}</h3>
+                    
+                    <div class="nutrient-block">
+                        <div class="block-label">{{ t.role_heading }}:</div>
+                        <div class="block-desc">{{ nut.role[language] if language in nut.role else nut.role.en }}</div>
+                    </div>
+
+                    <div class="nutrient-block alert-warning-box">
+                        <div class="block-label">{{ t.symptoms_heading }}:</div>
+                        <div class="block-desc">{{ nut.symptoms[language] if language in nut.symptoms else nut.symptoms.en }}</div>
+                    </div>
+
+                    <div class="nutrient-block alert-success-box">
+                        <div class="block-label">{{ t.cure_heading }}:</div>
+                        <div class="block-desc">{{ nut.cure[language] if language in nut.cure else nut.cure.en }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Section 2: Step-by-Step Soil Sampling Guide -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Laboratory Standard Method</span>
+                <h2>{{ t.soil_sampling_heading }}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    सटीक मिट्टी परीक्षण के लिए सही तरीके से नमूना लेना सबसे महत्वपूर्ण है। नीचे दी गई मानक वैज्ञानिक विधि का पालन करें:
+                    {% elif language == 'mr' %}
+                    अचूक माती परीक्षणासाठी योग्य पद्धतीने नमुना घेणे सर्वात महत्त्वाचे आहे. खालील प्रमाणित वैज्ञानिक पद्धत वापरा:
+                    {% else %}
+                    Accuracy of soil analysis is directly related to the quality of the soil sample taken. Follow this standard method:
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-num">1</div>
+                    <h3 class="step-card-title">{% if language == 'hi' %}नमूना स्थल चयन{% elif language == 'mr' %}जागा निवडणे{% else %}Select Sampling Spot{% endif %}</h3>
+                    <p>{% if language == 'hi' %}खेत में ज़िग-ज़ैग (W-आकार) पैटर्न में 10-15 अलग-अलग स्थानों का चयन करें। मेड़ों व पेड़ों के नीचे से नमूना न लें।{% elif language == 'mr' %}शेतातून नागमोडी (W-आकार) पद्धतीने १०-१५ वेगवेगळ्या जागा निवडा. बांधाजवळून नमुना घेऊ नका.{% else %}Choose 10-15 representative spots across the field in a zig-zag (W-pattern). Avoid spots near bunds, trees, and manure pits.{% endif %}</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-num">2</div>
+                    <h3 class="step-card-title">{% if language == 'hi' %}सतह की सफाई{% elif language == 'mr' %}कचरा काढणे{% else %}Remove Surface Litter{% endif %}</h3>
+                    <p>{% if language == 'hi' %}ऊपरी घास, पत्तियां व कचरा खुरपी से धीरे से हटा दें। ऊपरी मिट्टी को न खुरचें।{% elif language == 'mr' %}जमिनीवरील पालापाचोळा, गवत हलक्या हाताने बाजूला करा. वरची माती खरवडू नका.{% else %}Gently scrape away surface weeds, dead leaves, and litter without removing the rich topsoil.{% endif %}</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-num">3</div>
+                    <h3 class="step-card-title">{% if language == 'hi' %}15 सेमी 'V' कट{% elif language == 'mr' %}१५ सेमी 'V' आकाराचा खड्डा{% else %}Make 'V' Shaped Cut (15 cm){% endif %}</h3>
+                    <p>{% if language == 'hi' %}फावड़े या खुरपी से 15 सेमी (6 इंच) गहरा 'V' आकार का गड्ढा बनाएं।{% elif language == 'mr' %}खुरप्याने किंवा फावड्याने १५ सेमी (६ इंच) खोल इंग्रजी 'V' आकाराचा खड्डा खणा.{% else %}Dig a 'V' shaped pit to a depth of 15 cm (plough layer depth for field crops).{% endif %}</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-num">4</div>
+                    <h3 class="step-card-title">{% if language == 'hi' %}1 इंच मोटी मिट्टी स्लाइस{% elif language == 'mr' %}१ इंच जाडीचा थर गोळा करणे{% else %}Collect Uniform 1-inch Slice{% endif %}</h3>
+                    <p>{% if language == 'hi' %}'V' गड्ढे की दीवार से ऊपर से नीचे तक 1 इंच मोटी मिट्टी की स्लाइस काटकर साफ बाल्टी में डालें।{% elif language == 'mr' %}'V' आकाराच्या खड्ड्याच्या बाजूने वरपासून खालपर्यंत १ इंच जाडीची मातीची चकती काढून बादलीत टाका.{% else %}Cut a uniform 1-inch thick slice of soil from top to bottom of exposed 'V' face into a clean plastic bucket.{% endif %}</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-num">5</div>
+                    <h3 class="step-card-title">{% if language == 'hi' %}मिश्रण व चौथाई विधि (Quartering){% elif language == 'mr' %}मिश्रण व १/४ पद्धत (Quartering){% else %}Thorough Mixing & Quartering{% endif %}</h3>
+                    <p>{% if language == 'hi' %}सभी नमूनों को मिलाकर 4 बराबर भागों में बांटें। विपरीत भाग हटाएं जब तक 500 ग्राम मिट्टी न बचे।{% elif language == 'mr' %}सर्व माती एकत्र करून ४ समान भागात वाटा. समोरासमोरील २ भाग फेका, ५०० ग्रॅम उरेपर्यंत ही प्रक्रिया करा.{% else %}Mix collected soil thoroughly on a clean sheet, divide into 4 equal quarters until 500g remains.{% endif %}</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-num">6</div>
+                    <h3 class="step-card-title">{% if language == 'hi' %}लेबलिंग व KVK लैब जमा{% elif language == 'mr' %}माहिती चिठ्ठी व लॅब तपासणी{% else %}Label & Submit to KVK Lab{% endif %}</h3>
+                    <p>{% if language == 'hi' %}साफ थैली में किसान का नाम, खसरा नंबर, फसल लिखकर निकटतम KVK या जिला मृदा प्रयोगशाला में जमा करें।{% elif language == 'mr' %}पिशवीवर शेतकऱ्याचे नाव, गट नंबर लिहून जवळच्या कृषी विज्ञान केंद्रात (KVK) तपासणीसाठी पाठवा.{% else %}Pack in clean cloth bag with label and submit to nearest KVK or District Soil Testing Lab.{% endif %}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Fertilizer Mixing Compatibility Matrix -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Compatibility Chart</span>
+                <h2>{{ t.fertilizer_compatibility_heading }}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    उर्वरकों को गलत तरीके से मिलाने से पोषक तत्वों का नुकसान (जैसे अमोनिया गैस निकलना) और गांठें बन जाती हैं। नीचे दी गई सिफारिशों का ध्यान रखें:
+                    {% elif language == 'mr' %}
+                    चुकीच्या पद्धतीने खते एकत्र मिसळल्यास अन्नद्रव्यांचे नुकसान होते (उदा. अमोनिया वायू निघून जाणे). खालील तक्ता तपासा:
+                    {% else %}
+                    Improper mixing of fertilizers causes nutrient volatilization (e.g. Ammonia gas loss) and caking. Follow this guide:
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>{% if language == 'hi' %}उर्वरक का नाम{% elif language == 'mr' %}खताचे नाव{% else %}Fertilizer Name{% endif %}</th>
+                            <th>{% if language == 'hi' %}किसके साथ मिला सकते हैं (Compatible){% elif language == 'mr' %}कोणासोबत मिसळू शकता{% else %}Compatible With{% endif %}</th>
+                            <th>{% if language == 'hi' %}किसके साथ कभी न मिलाएं (Incompatible){% elif language == 'mr' %}कोणासोबत अजिबात मिसळू नका{% else %}Incompatible / Avoid Mixing{% endif %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fert in fertilizer_compatibility %}
+                        <tr>
+                            <td><strong>{{ fert.name[language] if language in fert.name else fert.name.en }}</strong></td>
+                            <td><span class="badge bg-success-subtle text-success p-2">{{ fert.compatible_with }}</span></td>
+                            <td><span class="badge bg-danger-subtle text-danger p-2">{{ fert.incompatible_with }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 4: Critical Stages for Irrigation -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Water Management</span>
+                <h2>{{ t.irrigation_advisory_title }} & Critical Growth Stages</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    इन संवेदनशील चरणों में पानी की कमी होने पर पैदावार में 40-60% तक की भारी गिरावट हो सकती है:
+                    {% elif language == 'mr' %}
+                    या अतिसंवेदनशील टप्प्यांत पाण्याचा ताण पडल्यास उत्पादनात ४०-६०% पर्यंत मोठी घट होऊ शकते:
+                    {% else %}
+                    Water stress at these critical physiological stages results in up to 40-60% yield loss:
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="nutrient-grid">
+                {% for crit in critical_irrigation_stages %}
+                <div class="card p-3 shadow-sm border-0 bg-light">
+                    <h4 class="text-success mb-2 fw-bold">{{ crit.crop[language] if language in crit.crop else crit.crop.en }}</h4>
+                    <p class="small text-muted mb-0"><strong>{% if language == 'hi' %}अतिसंवेदनशील अवस्थाएँ:{% elif language == 'mr' %}अतिसंवेदनशील अवस्था:{% else %}Critical Stages:{% endif %}</strong> {{ crit.stages[language] if language in crit.stages else crit.stages.en }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Section 5: Micro-Irrigation & Water Savings Metrics -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-3">
+                <span class="section-badge">Agronomic Research Data</span>
+                <h2>{{ t.drip_sprinkler_heading }}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    अनुसंधान आधारित सिंचाई सिफारिशें एवं पानी बचत विश्लेषण (MANAGE एवं GIZ रिपोर्ट):
+                    {% elif language == 'mr' %}
+                    संशोधन आधारित सिंचन शिफारसी व पाणी बचत विश्लेषण (MANAGE व GIZ अहवाल):
+                    {% else %}
+                    Research-backed micro-irrigation guidance and water management data:
+                    {% endif %}
+                </p>
+            </div>
+
+            <button type="button" class="details-accordion-btn mb-3" onclick="toggleSoilResearchDrawer()">
+                <span>📚 View MANAGE & GIZ Micro-Irrigation Research Data ↓</span>
+            </button>
+
+            <div class="details-accordion-content" id="soilResearchDrawer">
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100 p-4 border-success">
+                            <h3 class="text-success mb-3">{% if language == 'hi' %}ड्रिप सिंचाई के लाभ (Drip Irrigation){% elif language == 'mr' %}ठिबक सिंचनाचे फायदे (Drip){% else %}Benefits of Drip Irrigation{% endif %}</h3>
+                            <div class="table-responsive">
+                                <table class="custom-table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>{% if language == 'hi' %}फसल{% elif language == 'mr' %}पीक{% else %}Crop{% endif %}</th>
+                                            <th>{% if language == 'hi' %}पानी की बचत{% elif language == 'mr' %}पाण्याची बचत{% else %}Water Saving{% endif %}</th>
+                                            <th>{% if language == 'hi' %}पैदावार में वृद्धि{% elif language == 'mr' %}उत्पादनात वाढ{% else %}Yield Increase{% endif %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in drip_benefits %}
+                                        <tr>
+                                            <td><strong>{{ item.crop[language] if language in item.crop else item.crop.en }}</strong></td>
+                                            <td><span class="badge bg-info text-dark">{{ item.water_saving }}</span></td>
+                                            <td><span class="badge bg-success">+{{ item.yield_increase }}</span></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100 p-4 border-primary">
+                            <h3 class="text-primary mb-3">{% if language == 'hi' %}स्प्रिंकलर सिंचाई के लाभ (Sprinkler Irrigation){% elif language == 'mr' %}तुषार सिंचनाचे फायदे (Sprinkler){% else %}Benefits of Sprinkler Irrigation{% endif %}</h3>
+                            <div class="table-responsive">
+                                <table class="custom-table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>{% if language == 'hi' %}फसल{% elif language == 'mr' %}पीक{% else %}Crop{% endif %}</th>
+                                            <th>{% if language == 'hi' %}पानी की बचत{% elif language == 'mr' %}पाण्याची बचत{% else %}Water Saving{% endif %}</th>
+                                            <th>{% if language == 'hi' %}पैदावार में वृद्धि{% elif language == 'mr' %}उत्पादनात वाढ{% else %}Yield Increase{% endif %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in sprinkler_benefits %}
+                                        <tr>
+                                            <td><strong>{{ item.crop[language] if language in item.crop else item.crop.en }}</strong></td>
+                                            <td><span class="badge bg-info text-dark">{{ item.water_saving }}</span></td>
+                                            <td><span class="badge bg-primary">+{{ item.yield_increase }}</span></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <div class="page-content footer-inner">
+            <p>© 2026 <strong>{{ t.app_name }}</strong> · {{ t.app_tagline }}</p>
+            <div class="footer-lang-links">
+                <a href="{{ url_for('set_language', lang_code='en') }}">English</a> ·
+                <a href="{{ url_for('set_language', lang_code='hi') }}">हिन्दी</a> ·
+                <a href="{{ url_for('set_language', lang_code='mr') }}">मराठी</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    function toggleSoilResearchDrawer() {
+        const el = document.getElementById('soilResearchDrawer');
+        if (el) el.classList.toggle('show');
+    }
+    </script>
+</body>
+</html>
+

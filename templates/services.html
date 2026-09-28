@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.services_page_title }} - {{ t.app_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260917_v3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    {% include "nav.html" %}
+
+    <main id="mainContent" class="page-content tool-page services-page">
+        <!-- Page Header -->
+        <header class="page-header text-center">
+            <div class="eyebrow-pill">
+                <span class="pulse-dot"></span>
+                <span>{{ t.services_page_eyebrow }}</span>
+            </div>
+            <h1>{{ t.services_page_title }}</h1>
+            <p>{{ t.services_page_subtitle }}</p>
+        </header>
+
+        <!-- Section 1: Real-Time Government Agricultural Schemes -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Live Government Portals</span>
+                <h2>{% if language == 'hi' %}प्रमुख सरकारी कृषि योजनाएं एवं अनुदान{% elif language == 'mr' %}प्रमुख शासकीय कृषी योजना व अनुदान{% else %}Central & State Agricultural Schemes & Subsidies{% endif %}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    भारत सरकार एवं राज्य कृषि विभागों द्वारा संचालित प्रत्यक्ष लाभ अंतरण (DBT), वित्तीय सहायता एवं सब्सिडी योजनाएं:
+                    {% elif language == 'mr' %}
+                    भारत सरकार व कृषी विभागामार्फत शेतकऱ्यांना मिळणारे थेट आर्थिक सहाय्य, विमा व अनुदान योजना:
+                    {% else %}
+                    Active direct benefit transfer (DBT), financial assistance, insurance, and subsidy portals for Indian farmers:
+                    {% endif %}
+                </p>
+
+                <!-- Category Filter Chips -->
+                <div class="filter-chips-row mt-3" id="serviceCatChips">
+                    <button type="button" class="filter-chip-btn active" onclick="filterServiceCards('all', this)">All Services</button>
+                    <button type="button" class="filter-chip-btn" onclick="filterServiceCards('financial', this)">💰 Financial Support</button>
+                    <button type="button" class="filter-chip-btn" onclick="filterServiceCards('insurance', this)">🌾 Crop Insurance</button>
+                    <button type="button" class="filter-chip-btn" onclick="filterServiceCards('irrigation', this)">💧 Irrigation</button>
+                    <button type="button" class="filter-chip-btn" onclick="filterServiceCards('equipment', this)">🚜 Equipment Subsidy</button>
+                </div>
+            </div>
+
+            <div class="row" id="servicesGrid">
+                {% for sch in government_schemes %}
+                <div class="col-lg-4 col-md-6 mb-4 service-card-col" data-category="{{ 'financial' if 'kisan' in sch.id or 'dbt' in sch.id else ('insurance' if 'insurance' in sch.id or 'bima' in sch.id else ('irrigation' if 'drip' in sch.id or 'irrigation' in sch.id else ('equipment' if 'machinery' in sch.id or 'tractor' in sch.id else 'govt'))) }}">
+                    <div class="card h-100 p-4 border-1 shadow-sm bg-white rounded-lg d-flex flex-column justify-content-between scheme-card">
+                        <div>
+                            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                <h3 class="scheme-card-title fs-5 fw-bold text-dark mb-0">
+                                    {{ sch.name[language] if language in sch.name else sch.name.en }}
+                                </h3>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary flex-shrink-0" aria-hidden="true">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                </svg>
+                            </div>
+
+                            <div class="mb-3">
+                                <span class="badge bg-success-subtle text-success fw-bold px-2 py-1 scheme-subsidy-badge">
+                                    {{ sch.subsidy }}
+                                </span>
+                            </div>
+
+                            <p class="text-secondary small mb-3 scheme-benefit-desc">
+                                {{ sch.benefit[language] if language in sch.benefit else sch.benefit.en }}
+                            </p>
+
+                            <div class="bg-light p-2 rounded mb-3 small scheme-eligibility-box">
+                                <strong class="text-dark d-block mb-1">{% if language == 'hi' %}पात्रता:{% elif language == 'mr' %}पात्रता:{% else %}Eligibility:{% endif %}</strong>
+                                <span class="text-muted">{{ sch.eligibility[language] if language in sch.eligibility else sch.eligibility.en }}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between pt-3 border-top scheme-card-footer">
+                                <span class="text-muted small">
+                                    <strong>Helpline:</strong> {{ sch.helpline }}
+                                </span>
+                                <a href="{{ sch.portal_url }}" target="_blank" rel="noopener noreferrer" class="btn-portal-action">
+                                    <span>{% if language == 'hi' %}पोर्टल देखें{% elif language == 'mr' %}पोर्टल पाहा{% else %}Official Portal{% endif %}</span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15 3 21 3 21 9"/>
+                                        <line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Section 2: Official Extension Helplines & KCC -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Direct Agronomist Support</span>
+                <h2>{{ t.kcc_helpline_heading }}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    कृषि विशेषज्ञों एवं वैज्ञानिकों से फोन व केंद्र पर सीधी सलाह प्राप्त करने की हेल्पलाइन:
+                    {% elif language == 'mr' %}
+                    कृषी शास्त्रज्ञ व तज्ञांशी थेट संपर्क साधण्यासाठी अधिकृत हेल्पलाइन:
+                    {% else %}
+                    Direct farmer extension and telephone advisory systems from Ministry of Agriculture, GoI:
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="row">
+                {% for serv in (farmer_services or []) %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 p-4 border-0 shadow-sm bg-light rounded-lg extension-card">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="logo-badge" style="width: 32px; height: 32px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 21h18"/>
+                                    <path d="M3 10h18"/>
+                                    <path d="M5 6l7-3 7 3"/>
+                                    <path d="M4 10v11"/>
+                                    <path d="M20 10v11"/>
+                                </svg>
+                            </div>
+                            <h3 class="mb-0 text-success fs-6 fw-bold">{{ serv.title[language] if language in serv.title else serv.title.en }}</h3>
+                        </div>
+                        <div class="badge bg-success-subtle text-success p-2 mb-3 align-self-start fw-bold">
+                            {{ serv.contact }}
+                        </div>
+                        <p class="text-muted small mb-0">{{ serv.desc[language] if language in serv.desc else serv.desc.en }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12 text-center py-4 text-muted">
+                    <p>Extension helpline data is currently updating. Call national Kisan Call Centre at 1800-180-1551.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Section 3: Farm Economics & B:C Ratio Calculator -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Farm Profitability Engine</span>
+                <h2>{{ t.financial_planning_heading }} & {{ t.calc_bc_ratio }}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    अपनी फसल की कुल लागत और अनुमानित आय दर्ज कर लाभ-लागत अनुपात (Benefit-Cost Ratio) निकालें:
+                    {% elif language == 'mr' %}
+                    आपल्या पिकाचा एकूण खर्च व अपेक्षित उत्पन्न टाकून नफा-तोटा गुणोत्तर (B:C Ratio) काढा:
+                    {% else %}
+                    Farming is a business. Calculate your crop's net profit, gross margin and Benefit-Cost (B:C) ratio:
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card p-4 shadow-sm border-1 bg-white rounded-lg">
+                        <h3 class="calc-card-title text-success fs-5 fw-bold mb-3">{% if language == 'hi' %}लागत एवं आय विवरण दर्ज करें{% elif language == 'mr' %}खर्च व उत्पन्न नोंदवा{% else %}Enter Farm Expenses & Returns{% endif %}</h3>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small" for="calc-yield">{% if language == 'hi' %}कुल उत्पादन (क्विंटल में){% elif language == 'mr' %}एकूण उत्पादन (क्विंटलमध्ये){% else %}Total Production (Quintals){% endif %}</label>
+                            <input type="number" id="calc-yield" class="form-control calc-input" value="25" min="1" step="0.5">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small" for="calc-price">{% if language == 'hi' %}बिक्री मूल्य (₹ प्रति क्विंटल / MSP){% elif language == 'mr' %}बाजारभाव (₹ प्रति क्विंटल / हमीभाव){% else %}Selling Price (₹ per Quintal / MSP){% endif %}</label>
+                            <input type="number" id="calc-price" class="form-control calc-input" value="3600" min="100" step="50">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small" for="calc-cost">{% if language == 'hi' %}कुल खेती लागत (₹ में - बीज, खाद, मजदूरी, सिंचाई){% elif language == 'mr' %}एकूण लागवड खर्च (₹ मध्ये - बियाणे, खते, मजुरी){% else %}Total Cost of Cultivation (₹ - Inputs + Labour){% endif %}</label>
+                            <input type="number" id="calc-cost" class="form-control calc-input" value="57000" min="500" step="500">
+                        </div>
+
+                        <button class="button primary w-100 py-2 fw-bold text-center justify-content-center" onclick="computeBCRatio()">
+                            <span>{% if language == 'hi' %}गणना करें (Calculate){% elif language == 'mr' %}नफा व B:C Ratio काढा{% else %}Calculate Economics{% endif %}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="card p-4 shadow-sm border-1 bg-light rounded-lg" id="bc-result-box">
+                        <h3 class="calc-card-title text-primary fs-5 fw-bold mb-3">{% if language == 'hi' %}आर्थिक विश्लेषण परिणाम{% elif language == 'mr' %}आर्थिक विश्लेषण निष्कर्ष{% else %}Economic Analysis Results{% endif %}</h3>
+                        
+                        <div class="d-flex justify-content-between py-2 border-bottom">
+                            <span>{% if language == 'hi' %}कुल सकल आय (Gross Returns):{% elif language == 'mr' %}एकूण उत्पन्न (Gross Returns):{% else %}Gross Revenue:{% endif %}</span>
+                            <strong id="res-gross" class="text-success fs-5">₹ 90,000</strong>
+                        </div>
+
+                        <div class="d-flex justify-content-between py-2 border-bottom">
+                            <span>{% if language == 'hi' %}कुल लागत (Total Cost):{% elif language == 'mr' %}एकूण खर्च (Total Cost):{% else %}Total Cost:{% endif %}</span>
+                            <strong id="res-cost" class="text-danger fs-5">₹ 57,000</strong>
+                        </div>
+
+                        <div class="d-flex justify-content-between py-2 border-bottom">
+                            <span>{% if language == 'hi' %}शुद्ध लाभ (Net Profit):{% elif language == 'mr' %}निव्वळ नफा (Net Profit):{% else %}Net Profit:{% endif %}</span>
+                            <strong id="res-net" class="text-success fs-4">+ ₹ 33,000</strong>
+                        </div>
+
+                        <div class="d-flex justify-content-between py-2 mb-3">
+                            <span>{% if language == 'hi' %}लाभ-लागत अनुपात (B:C Ratio):{% elif language == 'mr' %}खर्च-नफा गुणोत्तर (B:C Ratio):{% else %}Benefit-Cost (B:C) Ratio:{% endif %}</span>
+                            <strong id="res-bc" class="badge bg-success fs-5 p-2">1 : 1.58</strong>
+                        </div>
+
+                        <div class="alert alert-info small mb-0" id="res-verdict">
+                            {% if language == 'hi' %}
+                            <strong>सफल व्यवसाय:</strong> B:C अनुपात 1.5 से अधिक है। यह फसल आर्थिक रूप से अत्यंत लाभदायक है।
+                            {% elif language == 'mr' %}
+                            <strong>फायदेशीर व्यवसाय:</strong> B:C गुणोत्तर १.५ पेक्षा जास्त आहे. हे पीक शेतीसाठी खूप फायद्याचे आहे.
+                            {% else %}
+                            <strong>Good Farm Business:</strong> The B:C ratio is greater than 1.5. This crop is economically viable and profitable.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Cash Flow Budget -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Farm Budgeting</span>
+                <h2>{% if language == 'hi' %}वार्षिक वित्तीय कैलेंडर (घाटा व बचत महीने){% elif language == 'mr' %}वार्षिक आर्थिक नियोजन (तूट व बचत महिने){% else %}Annual Farm Financial Calendar (Deficit vs Surplus Months){% endif %}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    कृषि हैंडबुक के अनुसार, खेती में खर्च हर महीने होता है पर आय केवल कटाई के बाद आती है। अधिशेष (बचत) महीनों से घाटा महीनों का प्रबंधन करें:
+                    {% elif language == 'mr' %}
+                    शेतीत खर्च दरमहा होतो पण उत्पन्न केवळ कापणीनंतर येते. बचत महिन्यांतील नफा राखून तुटीच्या महिन्यांचा खर्च भागवा:
+                    {% else %}
+                    According to the Handbook, farm expenditures occur monthly while revenues arrive at harvest. Successful farmers balance surplus and deficit cycles:
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="table-responsive">
+                <table class="custom-table financial-calendar-table text-center align-middle">
+                    <thead>
+                        <tr>
+                            <th>{% if language == 'hi' %}विवरण{% elif language == 'mr' %}तपशील{% else %}Month Phase{% endif %}</th>
+                            <th>Jan-Feb</th>
+                            <th>Mar-Apr</th>
+                            <th>May (Kharif Harvest)</th>
+                            <th>Jun-Jul (Sowing)</th>
+                            <th>Aug-Sept</th>
+                            <th>Oct</th>
+                            <th>Nov (Rabi Harvest)</th>
+                            <th>Dec</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>{% if language == 'hi' %}स्थिति{% elif language == 'mr' %}आर्थिक स्थिती{% else %}Financial Flow{% endif %}</strong></td>
+                            <td><span class="badge bg-warning text-dark">Deficit</span></td>
+                            <td><span class="badge bg-warning text-dark">Deficit</span></td>
+                            <td><span class="badge bg-success">Surplus (+ ₹ 81,400)</span></td>
+                            <td><span class="badge bg-warning text-dark">Deficit</span></td>
+                            <td><span class="badge bg-warning text-dark">Deficit</span></td>
+                            <td><span class="badge bg-warning text-dark">Deficit</span></td>
+                            <td><span class="badge bg-success">Surplus (+ ₹ 81,400)</span></td>
+                            <td><span class="badge bg-warning text-dark">Deficit</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <div class="page-content footer-inner">
+            <p>© 2026 <strong>{{ t.app_name }}</strong> · {{ t.app_tagline }}</p>
+            <div class="footer-lang-links">
+                <a href="{{ url_for('set_language', lang_code='en') }}">English</a> ·
+                <a href="{{ url_for('set_language', lang_code='hi') }}">हिन्दी</a> ·
+                <a href="{{ url_for('set_language', lang_code='mr') }}">मराठी</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    function filterServiceCards(cat, btn) {
+        document.querySelectorAll('#serviceCatChips .filter-chip-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        const cards = document.querySelectorAll('.service-card-col');
+        cards.forEach(card => {
+            const cardCat = card.getAttribute('data-category');
+            if (cat === 'all' || cardCat === cat) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function computeBCRatio() {
+        const yieldQtls = parseFloat(document.getElementById('calc-yield').value) || 0;
+        const price = parseFloat(document.getElementById('calc-price').value) || 0;
+        const cost = parseFloat(document.getElementById('calc-cost').value) || 1;
+
+        const gross = Math.round(yieldQtls * price);
+        const net = gross - cost;
+        const bcRatio = (gross / cost).toFixed(2);
+
+        document.getElementById('res-gross').innerText = '₹ ' + gross.toLocaleString();
+        document.getElementById('res-cost').innerText = '₹ ' + cost.toLocaleString();
+        document.getElementById('res-net').innerText = (net >= 0 ? '+ ₹ ' : '- ₹ ') + Math.abs(net).toLocaleString();
+        document.getElementById('res-bc').innerText = '1 : ' + bcRatio;
+
+        const verdictEl = document.getElementById('res-verdict');
+        const lang = "{{ language }}";
+        if (net > 0 && bcRatio >= 1.5) {
+            verdictEl.className = 'alert alert-success small mb-0';
+            verdictEl.innerHTML = '<strong>' + (lang === 'hi' ? 'सफल व्यवसाय:' : (lang === 'mr' ? 'फायदेशीर व्यवसाय:' : 'Good Farm Business:')) + '</strong> B:C ratio is ' + bcRatio + '. Highly profitable crop.';
+        } else if (net > 0) {
+            verdictEl.className = 'alert alert-info small mb-0';
+            verdictEl.innerHTML = '<strong>' + (lang === 'hi' ? 'मध्यम लाभ:' : (lang === 'mr' ? 'मध्यम नफा:' : 'Moderate Profit:')) + '</strong> B:C ratio is ' + bcRatio + '. Try reducing input cost.';
+        } else {
+            verdictEl.className = 'alert alert-danger small mb-0';
+            verdictEl.innerHTML = '<strong>' + (lang === 'hi' ? 'घाटे का सौदा:' : (lang === 'mr' ? 'तोट्याचा सौदा:' : 'Loss Making:')) + '</strong> Cost exceeds income. Consider alternate cropping pattern.';
+        }
+    }
+    </script>
+</body>
+</html>
+

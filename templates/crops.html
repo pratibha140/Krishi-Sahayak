@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.crops_page_title }} - {{ t.app_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260917_v3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    {% include "nav.html" %}
+
+    <main id="mainContent" class="page-content tool-page">
+        <!-- Page Header -->
+        <header class="page-header">
+            <div class="eyebrow-pill">
+                <span class="pulse-dot"></span>
+                <span>{{ t.crops_page_eyebrow }}</span>
+            </div>
+            <h1>{{ t.crops_page_title }}</h1>
+            <p>{{ t.crops_page_subtitle }}</p>
+        </header>
+
+        <!-- Category Filter Tabs -->
+        <section class="crop-filter-bar">
+            <a href="{{ url_for('crops', category='all') }}" class="filter-chip {{ 'active' if selected_category == 'all' else '' }}">
+                <span>{{ t.all_categories }}</span>
+            </a>
+            {% for cat_key, cat_names in crop_categories.items() %}
+            <a href="{{ url_for('crops', category=cat_key) }}" class="filter-chip {{ 'active' if selected_category == cat_key else '' }}">
+                <span>{{ cat_names[language] if language in cat_names else cat_names.en }}</span>
+            </a>
+            {% endfor %}
+        </section>
+
+        <!-- Crop Cards Grid -->
+        <section class="crops-grid">
+            {% for crop_id, crop in all_crops.items() %}
+            {% if selected_category == 'all' or crop.category == selected_category %}
+            <article class="crop-card" id="crop-{{ crop_id }}">
+                <div class="crop-card-header">
+                    <div class="crop-header-left">
+                        <div class="crop-visual-badge" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M7 20h10"/>
+                                <path d="M10 20c5.5-2.5.8-6.4 3-10"/>
+                                <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8Z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <span class="crop-cat-tag">{{ crop_categories[crop.category][language] if crop.category in crop_categories and language in crop_categories[crop.category] else crop.category }}</span>
+                            <h2 class="crop-title">{{ crop.names[language] if language in crop.names else crop.names.en }}</h2>
+                            <span class="crop-botanical"><i>{{ crop.scientific_name }}</i></span>
+                        </div>
+                    </div>
+                    <span class="season-badge">{{ crop.season[language] if language in crop.season else crop.season.en }}</span>
+                </div>
+
+                <div class="crop-attributes-grid">
+                    <div class="attr-box">
+                        <span class="attr-label">{{ t.crop_duration }}</span>
+                        <strong class="attr-val">{{ crop.duration_days }} {{ t.crop_duration_val }}</strong>
+                    </div>
+                    <div class="attr-box">
+                        <span class="attr-label">{{ t.crop_temp }}</span>
+                        <strong class="attr-val">{{ crop.optimal_temp }}</strong>
+                    </div>
+                    <div class="attr-box">
+                        <span class="attr-label">{{ t.crop_yield }}</span>
+                        <strong class="attr-val">{{ crop.expected_yield_per_acre }}</strong>
+                    </div>
+                </div>
+
+                <div class="crop-soil-box">
+                    <div class="soil-icon-box text-success">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <strong>{{ t.crop_soil }}:</strong>
+                        <p>{{ crop.soil[language] if language in crop.soil else crop.soil.en }}</p>
+                    </div>
+                </div>
+
+                <!-- Growth lifecycle accordion toggle -->
+                <details class="crop-details-accordion">
+                    <summary class="accordion-summary">
+                        <span>{{ t.growth_lifecycle }} &amp; {{ t.pests_diseases_title }}</span>
+                        <span class="chevron">▼</span>
+                    </summary>
+                    
+                    <div class="accordion-body">
+                        <!-- Lifecycle Milestones -->
+                        <h3 class="sub-heading">{{ t.growth_lifecycle }}</h3>
+                        <div class="crop-stage-list">
+                            {% for stg in crop.growth_stages %}
+                            <div class="stage-item">
+                                <div class="stage-day-badge">Day {{ stg.day_start }}-{{ stg.day_end }}</div>
+                                <div class="stage-info">
+                                    <strong>{{ stg.stage[language] if language in stg.stage else stg.stage.en }}</strong>
+                                    <p>{{ stg.task[language] if language in stg.task else stg.task.en }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Major Pests -->
+                        {% if crop.pests_and_diseases %}
+                        <h3 class="sub-heading" style="margin-top: 18px;">{{ t.pests_diseases_title }}</h3>
+                        <div class="crop-pest-list">
+                            {% for p in crop.pests_and_diseases %}
+                            <div class="pest-mini-card">
+                                <strong>{{ p.name[language] if language in p.name else p.name.en }}</strong>
+                                <p class="pest-symp"><strong>{{ t.symptoms_heading }}:</strong> {{ p.symptoms[language] if language in p.symptoms else p.symptoms.en }}</p>
+                                <p class="pest-rem"><strong>{{ t.chemical_remedy_heading }}:</strong> {{ p.chemical_remedy[language] if language in p.chemical_remedy else p.chemical_remedy.en }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </details>
+
+                <div class="crop-card-footer">
+                    <a href="{{ url_for('calendar', crop=crop_id) }}" class="button primary full-width">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1">
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                            <line x1="16" x2="16" y1="2" y2="6"/>
+                            <line x1="8" x2="8" y1="2" y2="6"/>
+                            <line x1="3" x2="21" y1="10" y2="10"/>
+                        </svg>
+                        <span>{{ t.view_crop_plan }}</span>
+                    </a>
+                </div>
+            </article>
+            {% endif %}
+            {% endfor %}
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <div class="page-content footer-inner">
+            <p>© 2026 <strong>{{ t.app_name }}</strong> · {{ t.app_tagline }}</p>
+            <div class="footer-lang-links">
+                <a href="{{ url_for('set_language', lang_code='en') }}">English</a> ·
+                <a href="{{ url_for('set_language', lang_code='hi') }}">हिन्दी</a> ·
+                <a href="{{ url_for('set_language', lang_code='mr') }}">मराठी</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+

@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.weather_page_title }} - {{ t.app_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260919_v1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Scoped Weather Page Design System */
+        .weather-main-wrapper {
+            width: 100%;
+            min-height: 100vh;
+            background: #f4f8f4;
+            color: var(--ink);
+ 
+            /* Type scale (7 sizes) */
+            --fs-xs: 0.8125rem; --fs-sm: 0.9375rem; --fs-md: 1rem; --fs-lg: 1.125rem;
+            --fs-xl: 1.5rem; --fs-2xl: 2rem; --fs-display: 4.5rem;
+            /* Text colours */
+            --ink: #0f172a; --ink-2: #475569; --ink-3: #64748b;
+            --on-dark-2: rgba(255, 255, 255, 0.80);
+            --mint: #86efac; --green: #15803d; --blue: #0369a1;
+            --amber: #92400e; --red: #b91c1c; --violet: #6d28d9;
+            /* Corner radii (5 values) */
+            --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-pill: 9999px;
+        }
+ 
+        /* ── Hero Animations ────────────────────────────────────────── */
+        @keyframes heroFadeIn {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes floatCard {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+        @keyframes glowPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.7); }
+        }
+ 
+        /* ── Weather Hero Section ────────────────────────────────────── */
+        /* New Hero Section */
+.new-hero {
+  background: linear-gradient(135deg, #032B16, #0B5E20, #15803D);
+  min-height: 300px;
+  border-radius: var(--r-xl);
+  padding: 80px 56px 56px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  margin-bottom: 24px;
+}
+ 
+.new-hero-content {
+  max-width: 640px;
+  z-index: 2;
+}
+        .weather-hero {
+            position: relative !important;
+            width: 100% !important;
+            height: 90vh !important;
+            min-height: 740px !important;
+            max-height: 980px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: hidden !important;
+            margin-bottom: 0 !important;
+            border-radius: 0 !important;
+            padding: 120px 0 90px !important;
+            box-sizing: border-box !important;
+        }
+        .weather-hero .hero-bg {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-size: cover !important;
+            background-position: center 38% !important;
+            background-repeat: no-repeat !important;
+            filter: brightness(1.05) contrast(1.10) saturate(1.08) !important;
+            transform: scale(1.02) !important;
+            z-index: 1 !important;
+        }
+        .weather-hero .hero-overlay {
+            position: absolute !important;
+            inset: 0 !important;
+            z-index: 2 !important;
+            background: linear-gradient(
+                180deg,
+                rgba(3, 25, 12, 0.60) 0%,
+                rgba(5, 35, 18, 0.48) 35%,
+                rgba(6, 45, 24, 0.40) 65%,
+                rgba(8, 58, 28, 0.55) 100%
+            ) !important;
+            pointer-events: none !important;
+        }
+        .weather-hero .hero-content {
+            position: relative !important;
+            z-index: 3 !important;
+            width: 100% !important;
+            max-width: 1280px !important;
+            margin: 0 auto !important;
+            padding: 0 60px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 40px !important;
+            animation: heroFadeIn 0.8s ease-out forwards !important;
+            box-sizing: border-box !important;
+        }
+ 
+        /* ── Left Column: Transparent Rounded Glass Container ────────── */
+        .hero-glass-container {
+            background: rgba(12, 28, 18, 0.22) !important;
+            backdrop-filter: blur(18px) !important;
+            -webkit-backdrop-filter: blur(18px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            border-radius: var(--r-xl) !important;
+            padding: 36px !important;
+            width: 620px !important;
+            max-width: 100% !important;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.30) !important;
+            color: #ffffff !important;
+            box-sizing: border-box !important;
+        }
+ 
+        /* LIVE BADGE */
+        .hero-live-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 14px;
+            border-radius: var(--r-pill);
+            background: rgba(34,197,94,.15);
+            color: var(--mint);
+            font-size: var(--fs-sm);
+            font-weight: 600;
+        }
+ 
+        /* TITLE */
+        .hero-main-title {
+            font-family: 'Poppins', 'Plus Jakarta Sans', sans-serif !important;
+            font-size: var(--fs-display) !important;
+            font-weight: 900 !important;
+            color: #ffffff !important;
+            line-height: 1.0 !important;
+            margin: 0 0 16px 0 !important;
+            letter-spacing: -0.03em !important;
+            text-shadow: 0 3px 18px rgba(0, 0, 0, 0.45) !important;
+        }
+ 
+        /* LOCATION BLOCK */
+        .hero-location-block {
+            margin-bottom: 16px !important;
+        }
+        .hero-location-row {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            font-size: var(--fs-xl) !important;
+            font-weight: 700 !important;
+            color: #ffffff !important;
+            margin-bottom: 4px !important;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+        }
+        .hero-location-icon {
+            color: var(--mint) !important;
+            display: flex !important;
+            align-items: center !important;
+            flex-shrink: 0 !important;
+        }
+        .hero-condition-text {
+            font-size: var(--fs-lg) !important;
+            font-weight: 600 !important;
+            color: var(--mint) !important;
+            letter-spacing: -0.01em !important;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.30) !important;
+        }
+ 
+        /* TEMPERATURE */
+        .hero-temp-block {
+            display: flex !important;
+            align-items: baseline !important;
+            flex-wrap: wrap !important;
+            gap: 4px 16px !important;
+            margin-bottom: 18px !important;
+        }
+        .hero-big-temp-value {
+            font-size: var(--fs-display) !important;
+            font-weight: 700 !important;
+            color: #ffffff !important;
+            line-height: 1 !important;
+            letter-spacing: -0.03em !important;
+            text-shadow: 0 3px 20px rgba(0, 0, 0, 0.40) !important;
+            margin: 0 !important;
+        }
+        .hero-feels-like-line {
+            font-size: var(--fs-lg) !important;
+            color: var(--on-dark-2) !important;
+            font-weight: 500 !important;
+            margin: 0 !important;
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.30) !important;
+        }
+        .hero-feels-like-line strong {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+ 
+        /* DESCRIPTION */
+        .hero-desc-text {
+            font-size: var(--fs-lg) !important;
+            color: var(--on-dark-2) !important;
+            max-width: 520px !important;
+            line-height: 1.7 !important;
+            margin: 0 0 26px 0 !important;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35) !important;
+        }
+ 
+        /* CTA BUTTON */
+        .hero-cta-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 18px 34px !important;
+            border-radius: var(--r-pill) !important;
+            background: linear-gradient(135deg, #1FA2FF 0%, #2BC0E4 100%) !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: var(--fs-md) !important;
+            text-decoration: none !important;
+            box-shadow: 0 8px 24px rgba(31, 162, 255, 0.35) !important;
+            border: none !important;
+            cursor: pointer !important;
+            transition: transform 0.22s ease, box-shadow 0.22s ease !important;
+            box-sizing: border-box !important;
+        }
+        .hero-cta-pill:hover {
+            transform: translateY(-4px) !important;
+            box-shadow: 0 12px 32px rgba(31, 162, 255, 0.55) !important;
+            color: #ffffff !important;
+        }
+        .hero-cta-pill:active {
+            transform: translateY(-1px) !important;
+        }
+        .cta-arrow-icon {
+            transition: transform 0.2s ease !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .hero-cta-pill:hover .cta-arrow-icon {
+            transform: translateX(5px) !important;
+        }
+ 
+        /* ── Right Column: Floating Weather Summary Card ─────────────── */
+        .hero-card-col {
+            flex: 0 0 390px !important;
+            width: 390px !important;
+            max-width: 100% !important;
+        }
+        .hero-summary-card {
+            width: 390px !important;
+            max-width: 100% !important;
+            min-height: 420px !important;
+            background: rgba(17, 34, 23, 0.30) !important;
+            backdrop-filter: blur(22px) !important;
+            -webkit-backdrop-filter: blur(22px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            border-radius: var(--r-xl) !important;
+            padding: 28px 26px !important;
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35) !important;
+            color: #ffffff !important;
+            box-sizing: border-box !important;
+            animation: floatCard 5s ease-in-out infinite !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+        }
+ 
+        /* Top Row in Right Card */
+        .summary-card-top {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            margin-bottom: 20px !important;
+        }
+        .summary-card-loc {
+            display: flex !important;
+            align-items: center !important;
+            gap: 7px !important;
+            font-size: var(--fs-md) !important;
+            font-weight: 700 !important;
+            color: #ffffff !important;
+        }
+        .summary-live-badge {
+            background: rgba(34, 197, 94, 0.22) !important;
+            border: 1px solid #4ade80 !important;
+            color: var(--mint) !important;
+            border-radius: var(--r-pill) !important;
+            padding: 4px 11px !important;
+            font-weight: 700 !important;
+            font-size: var(--fs-xs) !important;
+            letter-spacing: 0.05em !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+        }
+ 
+        /* Middle in Right Card */
+        .summary-card-middle {
+            margin-bottom: 24px !important;
+        }
+        .summary-temp-row {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            margin-bottom: 10px !important;
+        }
+        .summary-big-temp {
+            font-size: var(--fs-display) !important;
+            font-weight: 800 !important;
+            color: #ffffff !important;
+            line-height: 1 !important;
+            letter-spacing: -0.03em !important;
+            text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35) !important;
+        }
+        .summary-weather-icon {
+            color: var(--mint) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            animation: iconPulse 3s ease-in-out infinite !important;
+        }
+        .summary-cond-text {
+            font-size: var(--fs-lg) !important;
+            font-weight: 700 !important;
+            color: var(--mint) !important;
+            margin-bottom: 6px !important;
+        }
+        .summary-feels-sub {
+            font-size: var(--fs-xs) !important;
+            color: var(--on-dark-2) !important;
+            margin: 0 !important;
+        }
+        .summary-feels-sub strong {
+            color: #ffffff !important;
+        }
+ 
+        /* 3 Equal Glass Metric Boxes */
+        .summary-metrics-grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr 1fr !important;
+            gap: 10px !important;
+        }
+        .metric-box-card {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            border-radius: var(--r-lg) !important;
+            padding: 14px 8px !important;
+            text-align: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 5px !important;
+            transition: all 0.25s ease !important;
+            box-sizing: border-box !important;
+        }
+        .metric-box-card:hover {
+            border-color: rgba(56, 189, 248, 0.45) !important;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.30) !important;
+            background: rgba(255, 255, 255, 0.12) !important;
+            transform: translateY(-2px) !important;
+        }
+        .metric-box-icon {
+            color: var(--mint) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .metric-box-label {
+            font-size: var(--fs-xs) !important;
+            font-weight: 700 !important;
+            color: var(--on-dark-2) !important;
+        }
+        .metric-box-val {
+            font-size: var(--fs-sm) !important;
+            font-weight: 800 !important;
+            color: #ffffff !important;
+        }
+ 
+        /* ── Overlapping Search Toolbar Container ────────────────────── */
+        .weather-page-container {
+            width: min(1280px, calc(100% - 36px));
+            margin: -35px auto 48px;
+            position: relative;
+            z-index: 10;
+        }
+        .weather-toolbar-card {
+            background: #ffffff !important;
+            border: 1.5px solid #d8e6da !important;
+            border-radius: var(--r-xl) !important;
+            box-shadow: 0 15px 45px rgba(15, 60, 35, 0.15) !important;
+            padding: 22px !important;
+            margin-bottom: 28px !important;
+        }
+        .weather-toolbar-flex {
+            display: flex !important;
+            align-items: center !important;
+            gap: 18px !important;
+            flex-wrap: wrap !important;
+        }
+        .toolbar-gps-col { flex-shrink: 0; }
+        .toolbar-search-col { flex: 1 1 280px; min-width: 220px; }
+        .toolbar-select-col { flex-shrink: 0; min-width: 240px; }
+ 
+        /* GPS Button: Gradient Green, Rounded full pill, Icon circle */
+        .gps-btn {
+            background: linear-gradient(135deg, #15803D 0%, #16A34A 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+            box-shadow: 0 4px 16px rgba(21, 128, 61, 0.35) !important;
+            border-radius: var(--r-pill) !important;
+            font-weight: 700 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            padding: 8px 24px 8px 12px !important;
+            font-size: var(--fs-sm) !important;
+            white-space: nowrap !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            height: 48px !important;
+            box-sizing: border-box !important;
+        }
+        .gps-btn:hover {
+            background: linear-gradient(135deg, #166534 0%, #15803D 100%) !important;
+            box-shadow: 0 6px 20px rgba(21, 128, 61, 0.45) !important;
+        }
+        .gps-btn:active {
+            transform: translateY(1px) !important;
+        }
+        .gps-icon-circle {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: var(--r-pill) !important;
+            background: rgba(255, 255, 255, 0.22) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+        }
+ 
+        /* Search input: Rounded 20px, Border green 20%, Focus glow green */
+        .search-location-wrap {
+            position: relative !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .search-input-icon {
+            position: absolute !important;
+            left: 16px !important;
+            color: var(--ink-3) !important;
+            pointer-events: none !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .weather-search-input {
+            width: 100% !important;
+            height: 48px !important;
+            padding: 0 16px 0 46px !important;
+            border: 1.5px solid rgba(22, 163, 74, 0.20) !important;
+            border-radius: var(--r-lg) !important;
+            background: #ffffff !important;
+            font-size: var(--fs-sm) !important;
+            font-family: inherit !important;
+            font-weight: 500 !important;
+            color: var(--ink) !important;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
+            box-sizing: border-box !important;
+            outline: none !important;
+        }
+        .weather-search-input::placeholder {
+            color: var(--ink-3) !important;
+        }
+        .weather-search-input:focus {
+            border-color: #16a34a !important;
+            box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.20) !important;
+        }
+ 
+        .search-results-dropdown {
+            position: absolute !important;
+            top: calc(100% + 6px) !important;
+            left: 0 !important;
+            right: 0 !important;
+            background: #ffffff !important;
+            border: 1.5px solid #cbd5e1 !important;
+            border-radius: var(--r-md) !important;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12) !important;
+            z-index: 100 !important;
+            max-height: 280px !important;
+            overflow-y: auto !important;
+        }
+        .search-result-item {
+            padding: 10px 16px !important;
+            cursor: pointer !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            font-size: var(--fs-sm) !important;
+            transition: background 0.15s ease !important;
+        }
+        .search-result-item:hover {
+            background: #f0fdf4 !important;
+            color: var(--green) !important;
+        }
+ 
+        /* District Dropdown: Rounded 20px, Light green hover */
+        .district-select-custom {
+            height: 48px !important;
+            padding: 0 18px !important;
+            border: 1.5px solid rgba(22, 163, 74, 0.20) !important;
+            border-radius: var(--r-lg) !important;
+            background: #ffffff !important;
+            font-size: var(--fs-sm) !important;
+            font-family: inherit !important;
+            font-weight: 600 !important;
+            color: var(--ink) !important;
+            cursor: pointer !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            outline: none !important;
+            transition: all 0.2s ease !important;
+        }
+        .district-select-custom:hover {
+            background: #f0fdf4 !important;
+            border-color: #86efac !important;
+        }
+        .district-select-custom:focus {
+            border-color: #16a34a !important;
+            box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.20) !important;
+        }
+ 
+        .gps-status-msg.text-danger { color: var(--red) !important; }
+        .gps-status-msg.text-info { color: var(--blue) !important; }
+        .gps-status-msg {
+            margin-top: 10px;
+            font-size: var(--fs-xs);
+            font-weight: 600;
+        }
+ 
+        /* ── Dashboard Grid ──────────────────────────────────────────── */
+        .weather-dashboard-grid {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.9fr) !important;
+            gap: 24px !important;
+            margin-bottom: 28px !important;
+            align-items: start !important;
+        }
+ 
+        /* ── Primary Current Weather Card ────────────────────────────── */
+        .weather-hero-card {
+            background: linear-gradient(145deg, #0b2e13 0%, #154d20 50%, #0d3817 100%) !important;
+            border-radius: var(--r-lg) !important;
+            padding: 32px 30px 28px !important;
+            box-shadow: 0 20px 50px rgba(11, 46, 19, 0.28), 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+            border: 1.5px solid rgba(74, 222, 128, 0.22) !important;
+            position: relative !important;
+            overflow: hidden !important;
+            color: #ffffff !important;
+        }
+        .hero-card-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: flex-start !important;
+            margin-bottom: 20px !important;
+        }
+        .loc-subtitle {
+            font-size: var(--fs-xs) !important;
+            font-weight: 700 !important;
+            color: var(--mint) !important;
+            display: block !important;
+            margin-bottom: 4px !important;
+        }
+        .current-loc-name {
+            font-size: var(--fs-xl) !important;
+            font-weight: 800 !important;
+            color: #ffffff !important;
+            margin: 0 0 4px !important;
+            letter-spacing: -0.02em !important;
+        }
+        .time-updated-badge {
+            font-size: var(--fs-xs) !important;
+            color: var(--on-dark-2) !important;
+            font-weight: 500 !important;
+        }
+        .live-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            padding: 5px 12px !important;
+            border-radius: var(--r-pill) !important;
+            background: rgba(255, 255, 255, 0.10) !important;
+            border: 1px solid rgba(255, 255, 255, 0.22) !important;
+            color: var(--on-dark-2) !important;
+            font-size: var(--fs-xs) !important;
+            font-weight: 600 !important;
+        }
+ 
+        .hero-temp-flex {
+            display: flex !important;
+            justify-content: flex-start !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            margin-bottom: 28px !important;
+            gap: 16px 32px !important;
+        }
+        .big-temp-display {
+            display: flex !important;
+            align-items: flex-start !important;
+            line-height: 1 !important;
+        }
+        .big-number {
+            font-size: var(--fs-display) !important;
+            font-weight: 800 !important;
+            color: #ffffff !important;
+            letter-spacing: -0.03em !important;
+        }
+        .big-unit {
+            font-size: var(--fs-2xl) !important;
+            font-weight: 700 !important;
+            color: var(--mint) !important;
+            margin-left: 2px !important;
+            margin-top: 4px !important;
+        }
+        .feels-like-text {
+            font-size: var(--fs-sm) !important;
+            color: var(--on-dark-2) !important;
+            margin: 8px 0 0 !important;
+        }
+        .feels-like-text strong {
+            color: #ffffff !important;
+        }
+        .hero-temp-right {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            text-align: left !important;
+        }
+        .main-weather-icon {
+            color: var(--mint) !important;
+            margin: 0 !important;
+        }
+        .main-weather-condition {
+            font-size: var(--fs-lg) !important;
+            font-weight: 700 !important;
+            color: #ffffff !important;
+        }
+ 
+        /* 8 Agricultural Weather Metric Chips */
+        .weather-stats-quad {
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 10px !important;
+        }
+        .quad-chip {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            border-radius: var(--r-md) !important;
+            padding: 12px 14px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            transition: background 0.15s ease !important;
+        }
+        .quad-chip:hover {
+            background: rgba(255, 255, 255, 0.12) !important;
+        }
+        .chip-icon {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            color: var(--mint) !important;
+            flex-shrink: 0 !important;
+        }
+        .chip-label {
+            display: block !important;
+            font-size: var(--fs-xs) !important;
+            color: var(--on-dark-2) !important;
+            font-weight: 600 !important;
+            line-height: 1.2 !important;
+            margin-bottom: 2px !important;
+        }
+        .chip-value {
+            display: block !important;
+            font-size: var(--fs-sm) !important;
+            font-weight: 800 !important;
+            color: #ffffff !important;
+        }
+ 
+        /* ── Advisory Column ─────────────────────────────────────────── */
+        .weather-advisory-column {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+        }
+        .advisory-card {
+            background: #ffffff !important;
+            border: 1.5px solid #dbe8dd !important;
+            border-radius: var(--r-lg) !important;
+            padding: 20px 22px !important;
+            box-shadow: 0 6px 20px rgba(16, 52, 23, 0.06), 0 1px 4px rgba(0, 0, 0, 0.02) !important;
+            transition: box-shadow 0.15s ease !important;
+        }
+        .advisory-card:hover {
+            box-shadow: 0 10px 28px rgba(16, 52, 23, 0.10) !important;
+        }
+        .spray-card-good { border-left: 5px solid #16a34a !important; }
+        .spray-card-warning { border-left: 5px solid #f59e0b !important; }
+        .spray-card-bad { border-left: 5px solid #ef4444 !important; }
+        .spray-card-neutral { border-left: 5px solid #64748b !important; }
+        .irrigation-card { border-left: 5px solid #0284c7 !important; }
+        .pest-card-safe { border-left: 5px solid #16a34a !important; }
+        .pest-card-warning { border-left: 5px solid #f59e0b !important; }
+ 
+        .advisory-badge-row {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            margin-bottom: 10px !important;
+        }
+        .advisory-badge {
+            padding: 4px 12px !important;
+            border-radius: var(--r-pill) !important;
+            font-size: var(--fs-xs) !important;
+            font-weight: 800 !important;
+            background: #f0fdf4 !important;
+            color: var(--green) !important;
+            border: 1px solid rgba(22, 163, 74, 0.25) !important;
+        }
+        .badge-info {
+            background: #f0f9ff !important;
+            color: var(--blue) !important;
+            border-color: rgba(2, 132, 199, 0.25) !important;
+        }
+        .badge-warning {
+            background: #fffbeb !important;
+            color: var(--amber) !important;
+            border-color: rgba(245, 158, 11, 0.25) !important;
+        }
+        .risk-level-tag {
+            font-size: var(--fs-xs) !important;
+            font-weight: 800 !important;
+            padding: 3px 8px !important;
+            border-radius: var(--r-pill) !important;
+            background: #fef3c7 !important;
+            color: var(--amber) !important;
+        }
+        .advisory-type {
+            font-size: var(--fs-sm) !important;
+            font-weight: 700 !important;
+            color: var(--ink) !important;
+        }
+        .advisory-tip {
+            font-size: var(--fs-sm) !important;
+            color: var(--ink-2) !important;
+            line-height: 1.55 !important;
+            margin: 0 !important;
+        }
+ 
+        /* ── Precision Spray Windows ─────────────────────────────────── */
+        .section-card {
+            background: #ffffff !important;
+            border: 1.5px solid #dbe8dd !important;
+            border-radius: var(--r-lg) !important;
+            padding: 26px 28px !important;
+            box-shadow: 0 8px 24px rgba(16, 52, 23, 0.06), 0 1px 4px rgba(0, 0, 0, 0.02) !important;
+            margin-bottom: 28px !important;
+        }
+        .section-header-row {
+            margin-bottom: 18px !important;
+        }
+        .section-badge {
+            display: inline-block !important;
+            padding: 4px 12px !important;
+            border-radius: var(--r-pill) !important;
+            background: #f0fdf4 !important;
+            border: 1px solid rgba(22, 163, 74, 0.25) !important;
+            color: var(--green) !important;
+            font-size: var(--fs-xs) !important;
+            font-weight: 800 !important;
+            margin-bottom: 6px !important;
+        }
+        .section-header-row h2 {
+            font-size: var(--fs-xl) !important;
+            font-weight: 800 !important;
+            color: var(--ink) !important;
+            margin: 0 0 4px !important;
+            letter-spacing: -0.02em !important;
+        }
+ 
+        .spray-window-card {
+            background: #f8fafc !important;
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: var(--r-md) !important;
+            padding: 16px 18px !important;
+            transition: all 0.15s ease !important;
+        }
+        .spray-window-card:hover {
+            box-shadow: 0 6px 18px rgba(16, 52, 23, 0.08) !important;
+        }
+        .window-status-good { border-left: 4px solid #16a34a !important; background: #f0fdf4 !important; }
+        .window-status-warning { border-left: 4px solid #f59e0b !important; background: #fffbeb !important; }
+        .window-status-bad { border-left: 4px solid #ef4444 !important; background: #fef2f2 !important; }
+ 
+        .window-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            margin-bottom: 8px !important;
+        }
+        .window-day { font-weight: 800 !important; color: #0f172a !important; font-size: var(--fs-sm) !important; }
+        .window-time { font-size: var(--fs-xs) !important; color: #64748b !important; font-weight: 600 !important; }
+        .window-metrics { font-size: var(--fs-sm) !important; color: #475569 !important; margin-bottom: 8px !important; }
+        .window-badge {
+            display: inline-block !important;
+            padding: 3px 9px !important;
+            border-radius: var(--r-pill) !important;
+            font-size: var(--fs-xs) !important;
+            font-weight: 800 !important;
+            background: rgba(22, 163, 74, 0.14) !important;
+            color: var(--green) !important;
+        }
+ 
+        /* ── Hourly Forecast Scroll Strip ────────────────────────────── */
+        .hourly-cards-scroll-wrapper {
+            display: flex !important;
+            gap: 12px !important;
+            overflow-x: auto !important;
+            padding-bottom: 10px !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: rgba(21, 128, 61, 0.65) #e2e8f0 !important;
+        }
+        .hourly-scroll-shell { position: relative; }
+        .hourly-scroll-shell::before, .hourly-scroll-shell::after {
+            content: ""; position: absolute; top: 0; bottom: 10px; width: 56px;
+            pointer-events: none; z-index: 1; opacity: 0; transition: opacity 0.2s ease;
+        }
+        .hourly-scroll-shell::before { left: 0; background: linear-gradient(90deg, #fff, rgba(255,255,255,0)); }
+        .hourly-scroll-shell::after { right: 0; background: linear-gradient(270deg, #fff, rgba(255,255,255,0)); }
+        .hourly-scroll-shell.can-scroll-left::before, .hourly-scroll-shell.can-scroll-right::after { opacity: 1; }
+        .hourly-scroll-btn {
+            position: absolute; top: calc(50% - 5px); transform: translateY(-50%); z-index: 2;
+            width: 44px; height: 44px; border-radius: var(--r-pill);
+            display: flex; align-items: center; justify-content: center;
+            background: #fff; color: var(--green); border: 1.5px solid #86efac;
+            box-shadow: 0 4px 14px rgba(16, 52, 23, 0.18); cursor: pointer;
+            transition: background 0.15s ease, opacity 0.15s ease;
+        }
+        .hourly-scroll-btn:hover { background: #f0fdf4; }
+        .hourly-scroll-btn:disabled { opacity: 0; pointer-events: none; }
+        .hourly-scroll-prev { left: -10px; }
+        .hourly-scroll-next { right: -10px; }
+        .hourly-scroll-btn:focus-visible, .hourly-cards-scroll-wrapper:focus-visible,
+        .gps-btn:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
+        .hero-cta-pill:focus-visible { outline: 3px solid #ffffff !important; outline-offset: 3px !important; }
+        .hourly-card-item {
+            flex-shrink: 0 !important;
+            min-width: 105px !important;
+            padding: 16px 12px !important;
+            background: #ffffff !important;
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: var(--r-md) !important;
+            text-align: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 6px !important;
+            transition: all 0.15s ease !important;
+        }
+        .hourly-card-item:hover {
+            background: #f0fdf4 !important;
+            border-color: #86efac !important;
+        }
+        .hour-time-badge {
+            font-size: var(--fs-xs) !important;
+            font-weight: 700 !important;
+            color: var(--ink-3) !important;
+        }
+        .hour-weather-icon { color: #16a34a !important; }
+        .hour-temp-value {
+            font-size: var(--fs-lg) !important;
+            font-weight: 800 !important;
+            color: var(--ink) !important;
+        }
+        .hour-rain-pill, .hour-wind-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            font-size: var(--fs-xs) !important;
+            font-weight: 600 !important;
+            color: var(--ink-2) !important;
+        }
+        .metric-icon-inline {
+            color: var(--blue);
+            flex-shrink: 0;
+        }
+        .metric-icon-wind {
+            color: var(--ink-3);
+            flex-shrink: 0;
+        }
+ 
+        /* ── 7-Day Daily Forecast ────────────────────────────────────── */
+        .daily-cards-container {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            max-width: 880px !important;
+            margin-inline: auto !important;
+        }
+        .daily-card-row {
+            display: grid !important;
+            grid-template-columns: minmax(88px, 140px) 44px minmax(0, 1fr) 120px 130px !important;
+            column-gap: 20px !important;
+            align-items: center !important;
+            padding: 14px 18px !important;
+            background: #ffffff !important;
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: var(--r-md) !important;
+            transition: all 0.15s ease !important;
+        }
+        .daily-card-row:nth-child(even) { background: #f8fafc !important; }
+        .daily-card-row:hover {
+            background: #f0fdf4 !important;
+            border-color: #86efac !important;
+        }
+        .daily-weekday {
+            font-size: var(--fs-sm) !important;
+            font-weight: 800 !important;
+            color: var(--ink) !important;
+        }
+        .daily-cond-name {
+            font-size: var(--fs-sm) !important;
+            color: var(--ink-2) !important;
+            font-weight: 500 !important;
+        }
+        .rain-prob-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            padding: 4px 10px !important;
+            border-radius: var(--r-pill) !important;
+            font-size: var(--fs-xs) !important;
+            font-weight: 700 !important;
+        }
+        .rain-level-high { background: #fef2f2 !important; color: #dc2626 !important; }
+        .rain-level-med  { background: #fffbeb !important; color: #b45309 !important; }
+        .rain-level-low  { background: #f0fdf4 !important; color: #15803d !important; }
+ 
+        .daily-high-temp {
+            font-size: var(--fs-md) !important;
+            font-weight: 800 !important;
+            color: var(--ink) !important;
+        }
+        .daily-low-temp {
+            font-size: var(--fs-sm) !important;
+            color: var(--ink-3) !important;
+            font-weight: 600 !important;
+        }
+        .temp-sep {
+            color: var(--ink-3) !important;
+            margin: 0 4px !important;
+        }
+ 
+        .severity-icon-box {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: var(--r-sm) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .weather-sunny     { background: #fefce8 !important; color: #d97706 !important; }
+        .weather-drizzle-light { background: #eff6ff !important; color: #2563eb !important; }
+        .weather-rain-heavy { background: #eef2ff !important; color: #4338ca !important; }
+        .weather-storm     { background: #fdf2f8 !important; color: #9333ea !important; }
+        .weather-cloudy    { background: #f1f5f9 !important; color: #64748b !important; }
+ 
+        /* ── Weather Alert Banner ────────────────────────────────────── */
+        .weather-alert-banner {
+            display: flex !important;
+            align-items: center !important;
+            gap: 14px !important;
+            padding: 16px 20px !important;
+            border-radius: var(--r-md) !important;
+            margin-bottom: 20px !important;
+            font-size: var(--fs-sm) !important;
+            line-height: 1.50 !important;
+            border-left: 5px solid !important;
+            background: #fffbeb !important;
+            border-color: #f59e0b !important;
+            color: var(--amber) !important;
+        }
+
+        /* ── Geolocation Fallback Status Banner (UIUX-02) ────────────── */
+        .geo-fallback-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 20px;
+            background: #fffbeb;
+            border-left: 5px solid #f59e0b;
+            border-radius: var(--r-md, 12px);
+            margin-bottom: 24px;
+            font-size: var(--fs-sm, 14px);
+            color: #92400e;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        .geo-fallback-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .geo-fallback-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .geo-fallback-text {
+            line-height: 1.45;
+        }
+        .geo-fallback-text strong {
+            display: block;
+            margin-bottom: 2px;
+            color: #78350f;
+        }
+        .geo-fallback-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .geo-fallback-btn {
+            background: #d97706;
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: var(--r-sm, 8px);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s ease;
+        }
+        .geo-fallback-btn:hover {
+            background: #b45309;
+        }
+        .geo-fallback-dismiss {
+            background: transparent;
+            border: none;
+            color: #92400e;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 4px;
+            line-height: 1;
+        }
+        .geo-fallback-dismiss:hover {
+            background: rgba(146, 64, 14, 0.1);
+        }
+        @media (max-width: 640px) {
+            .geo-fallback-banner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .geo-fallback-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+ 
+        /* ── Responsive Adaptations ──────────────────────────────────── */
+        @media (max-width: 1024px) {
+            .weather-hero {
+                height: auto !important;
+                min-height: 720px !important;
+                max-height: none !important;
+                padding: 110px 0 60px !important;
+            }
+            .weather-hero .hero-content {
+                padding: 0 24px !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 36px !important;
+            }
+            .hero-glass-container {
+                width: 100% !important;
+                max-width: 680px !important;
+            }
+            .hero-card-col, .hero-summary-card {
+                width: 100% !important;
+                max-width: 480px !important;
+            }
+            .weather-main-wrapper { --fs-display: 3.5rem; }
+        }
+        @media (max-width: 768px) {
+            .weather-hero {
+                padding: 95px 0 50px !important;
+            }
+            .weather-hero .hero-content {
+                padding: 0 20px !important;
+            }
+            .hero-glass-container {
+                padding: 26px 20px !important;
+                border-radius: var(--r-lg) !important;
+            }
+            .weather-main-wrapper { --fs-display: 2.75rem; }
+            .new-hero { padding: 80px 20px 40px; }
+            .hero-location-row { font-size: var(--fs-lg) !important; }
+            .hero-desc-text { font-size: var(--fs-md) !important; }
+            .hero-summary-card {
+                padding: 22px 18px !important;
+                border-radius: var(--r-lg) !important;
+            }
+            .summary-big-temp {
+                font-size: var(--fs-2xl) !important;
+            }
+            .weather-page-container {
+                width: calc(100% - 24px) !important;
+                margin-top: -25px !important;
+            }
+            .weather-toolbar-card {
+                padding: 18px !important;
+                border-radius: var(--r-lg) !important;
+            }
+            .weather-toolbar-flex {
+                flex-direction: column !important;
+                gap: 12px !important;
+            }
+            .toolbar-gps-col, .toolbar-search-col, .toolbar-select-col {
+                width: 100% !important;
+            }
+            .gps-btn {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+        }
+        @media (max-width: 992px) {
+            .weather-dashboard-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .weather-stats-quad {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+        @media (max-width: 640px) {
+            .weather-hero-card {
+                padding: 22px 18px !important;
+                border-radius: var(--r-lg) !important;
+            }
+            .weather-stats-quad {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+            .daily-card-row {
+                grid-template-columns: 1.3fr 0.5fr 1fr 1fr !important;
+                column-gap: 10px !important;
+            }
+            .daily-cond-col { display: none !important; }
+        }
+ 
+        /* ── Hero: inset rounded card, same look as the Crop Explorer hero ── */
+        .weather-main-wrapper { --fs-hero: 2.5rem; padding-top: 96px; }
+        .new-hero {
+            display: block; width: min(1280px, calc(100% - 36px)); min-height: 0;
+            margin: 0 auto 24px; padding: 48px 56px 72px;
+        }
+        .new-hero-content { max-width: 720px; }
+        .hero-live-badge {
+            display: inline-flex; align-items: center; gap: 8px; padding: 5px 16px 5px 6px;
+            border: 1px solid rgba(74, 222, 128, 0.45); background: rgba(255, 255, 255, 0.06);
+            border-radius: var(--r-pill); color: var(--mint); font-size: var(--fs-sm); font-weight: 700;
+        }
+        .hero-live-dot {
+            width: 26px; height: 26px; border-radius: var(--r-pill); background: rgba(34, 197, 94, 0.25);
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .hero-live-dot::after { content: ""; width: 9px; height: 9px; border-radius: var(--r-pill); background: #4ade80; }
+        .new-hero .hero-main-title {
+            font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif !important;
+            font-size: var(--fs-hero) !important; font-weight: 800 !important; line-height: 1.1 !important;
+            letter-spacing: -0.02em !important; text-shadow: none !important; margin: 20px 0 14px !important;
+        }
+        .new-hero .hero-location-block { margin-bottom: 6px !important; }
+        .new-hero .hero-location-row { font-size: var(--fs-lg) !important; margin: 0 !important; text-shadow: none !important; }
+        .new-hero .hero-temp-block { margin-bottom: 14px !important; }
+        .new-hero .hero-big-temp-value { font-size: var(--fs-2xl) !important; text-shadow: none !important; }
+        .new-hero .hero-condition-text { text-shadow: none !important; }
+        .new-hero .hero-desc-text { font-size: var(--fs-md) !important; line-height: 1.6 !important; max-width: 560px !important; margin: 0 !important; text-shadow: none !important; }
+        @media (max-width: 768px) {
+            .weather-main-wrapper { --fs-hero: 2rem; padding-top: 88px; }
+            .new-hero { padding: 32px 20px 64px; }
+        }
+    </style>
+</head>
+<body class="weather-page-body">
+    {% include "nav.html" %}
+ 
+    <main id="mainContent" class="weather-main-wrapper">
+        <!-- Hero Section -->
+        <section class="new-hero">
+    <div class="new-hero-content">
+        <div class="hero-live-badge"><span class="hero-live-dot" aria-hidden="true"></span>Live agri weather</div>
+        <h1 class="hero-main-title">Today's Weather</h1>
+        <div class="hero-location-block">
+            <div class="hero-location-row">
+                <span class="hero-location-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                </span>
+                <span>{{ weather_data.location_name if weather_data and weather_data.location_name else 'Thane, Maharashtra' }}</span>
+            </div>
+        </div>
+        <div class="hero-temp-block">
+            <div class="hero-big-temp-value">{{ weather_data.current.temp if weather_data and weather_data.current else '27' }}°C</div>
+            <div class="hero-condition-text">{{ weather_data.current.condition if weather_data and weather_data.current else 'Mainly Clear' }}</div>
+        </div>
+        <p class="hero-desc-text">{{ t.weather_hero_desc if t.weather_hero_desc else 'Hyper-local forecasts, rainfall alerts, soil conditions and smart spraying guidance for better farm decisions.' }}</p>
+    </div>
+</section>
+ 
+        <!-- Main Content Area -->
+        <div class="weather-page-container">
+            <!-- Location Search & Selection Panel -->
+            <section class="weather-toolbar-card">
+                <div class="weather-toolbar-flex">
+                    <!-- GPS Detect Button -->
+                    <div class="toolbar-gps-col">
+                        <button class="gps-btn" type="button" id="btnUseGps">
+                            <span class="gps-icon-circle">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                </svg>
+                            </span>
+                            <span id="gpsBtnText">{{ t.use_my_location }}</span>
+                        </button>
+                    </div>
+ 
+                    <!-- Instant Village / Town Search Bar -->
+                    <div class="toolbar-search-col">
+                        <div class="search-location-wrap">
+                            <span class="search-input-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                </svg>
+                            </span>
+                            <input type="text" id="locationSearchInput" class="weather-search-input" 
+                                   placeholder="{{ t.search_city_placeholder }}" autocomplete="off">
+                            <div id="searchResultsDropdown" class="search-results-dropdown" style="display: none;"></div>
+                        </div>
+                    </div>
+ 
+                    <!-- District Selection Dropdown -->
+                    <div class="toolbar-select-col">
+                        <select id="districtSelect" class="district-select-custom" onchange="if(this.value) window.location.href='/weather?city='+this.value">
+                            <option value="">-- {{ t.search_district_label }} --</option>
+                            {% for d_key, d_info in popular_locations.items() %}
+                                <option value="{{ d_key }}" {% if selected_city == d_key %}selected{% endif %}>
+                                    {{ d_info.name[language] if language in d_info.name else d_info.name.en }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="gps-status-msg" id="gpsStatusMsg"></div>
+            </section>
+
+            <!-- Geolocation Fallback Status Banner (UIUX-02) -->
+            <div id="geoFallbackBanner" class="geo-fallback-banner" role="status" aria-live="polite" style="display: none;">
+                <div class="geo-fallback-content">
+                    <span class="geo-fallback-icon" aria-hidden="true">📍</span>
+                    <div class="geo-fallback-text">
+                        <strong>
+                            {% if language == 'hi' %}
+                                लोकेशन एक्सेस अक्षम है।
+                            {% elif language == 'mr' %}
+                                लोकेशन प्रवेश अक्षम आहे.
+                            {% else %}
+                                Location access disabled.
+                            {% endif %}
+                        </strong>
+                        <span>
+                            {% if language == 'hi' %}
+                                डिफ़ॉल्ट कृषि क्षेत्र (पुणे) दिखाया जा रहा है। स्थानीय मौसम के लिए अपना जिला खोजें।
+                            {% elif language == 'mr' %}
+                                डीफॉल्ट कृषी क्षेत्र (पुणे) दाखवले जात आहे. स्थानिक हवामानासाठी आपला जिल्हा शोधा.
+                            {% else %}
+                                Showing default agricultural region (Pune). Search your district for local weather.
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="geo-fallback-actions">
+                    <button type="button" id="btnFocusSearch" class="geo-fallback-btn">
+                        🔍 
+                        {% if language == 'hi' %}
+                            जिला खोजें
+                        {% elif language == 'mr' %}
+                            जिल्हा शोधा
+                        {% else %}
+                            Search District
+                        {% endif %}
+                    </button>
+                    <button type="button" id="btnDismissGeoBanner" class="geo-fallback-dismiss" aria-label="Dismiss banner">✕</button>
+                </div>
+            </div>
+ 
+            <!-- Dashboard Grid: Current Weather & Operational Advisories -->
+            <div class="weather-dashboard-grid">
+                <!-- Primary Information Card: Current Weather -->
+                <section class="weather-hero-card">
+                    <div class="hero-card-header">
+                        <div>
+                            <span class="loc-subtitle">{{ t.current_conditions }}</span>
+                            <h2 class="current-loc-name" id="currentLocName">{{ weather_data.location_name }}</h2>
+                            <span class="time-updated-badge">{{ t.updated_at }}: {{ weather_data.updated_at }}</span>
+                        </div>
+                        <span class="live-pill">
+                            <svg width="8" height="8" viewBox="0 0 8 8" fill="#86efac" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
+                            Live satellite
+                        </span>
+                    </div>
+ 
+                    <div class="hero-temp-flex">
+                        <div class="hero-temp-left">
+                            <div class="big-temp-display">
+                                <span class="big-number" id="currentTemp">{{ weather_data.current.temp }}</span>
+                                <span class="big-unit">°C</span>
+                            </div>
+                            <p class="feels-like-text">
+                                {{ t.feels_like }} <strong id="feelsLike">{{ weather_data.current.feels_like }}°C</strong> · 
+                                {{ t.today_high_low }}: <strong id="highLow">{{ weather_data.current.today_max }}° / {{ weather_data.current.today_min }}°</strong>
+                            </p>
+                        </div>
+ 
+                        <div class="hero-temp-right">
+                            <div class="main-weather-icon" id="mainWeatherIcon">
+                                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2v2"/>
+                                    <path d="m4.93 4.93 1.41 1.41"/>
+                                    <path d="M20 12h2"/>
+                                    <path d="m19.07 4.93-1.41 1.41"/>
+                                    <path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/>
+                                    <path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>
+                                </svg>
+                            </div>
+                            <div class="main-weather-condition" id="mainCondition">{{ weather_data.current.condition }}</div>
+                        </div>
+                    </div>
+ 
+                    <!-- 8 Agricultural Weather Metrics Chips -->
+                    <div class="weather-stats-quad">
+                        <div class="quad-chip">
+                            <span class="chip-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="chip-label">{{ t.rain_prob }}</span>
+                                <strong class="chip-value" id="valRainProb">{{ weather_data.current.rain_prob }}%</strong>
+                            </div>
+                        </div>
+ 
+                        <div class="quad-chip">
+                            <span class="chip-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="chip-label">{{ t.humidity }}</span>
+                                <strong class="chip-value" id="valHumidity">{{ weather_data.current.humidity }}%</strong>
+                            </div>
+                        </div>
+ 
+                        <div class="quad-chip">
+                            <span class="chip-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="chip-label">{{ t.wind_speed }}</span>
+                                <strong class="chip-value" id="valWind">{{ weather_data.current.wind_speed }} km/h</strong>
+                            </div>
+                        </div>
+ 
+                        <div class="quad-chip">
+                            <span class="chip-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="chip-label">{{ t.wind_direction_label }}</span>
+                                <strong class="chip-value" id="valWindCompass">{{ weather_data.current.wind_compass }}</strong>
+                            </div>
+                        </div>
+ 
+                        <div class="quad-chip">
+                            <span class="chip-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="chip-label">{{ t.soil_temp_label }}</span>
+                                <strong class="chip-value" id="valSoilTemp">{{ weather_data.current.soil_temp }}°C</strong>
+                            </div>
+                        </div>
+ 
+                        <div class="quad-chip">
+                            <span class="chip-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22v-9"/><path d="M9 15c0-3 3-5 3-5s3 2 3 5"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="chip-label">{{ t.soil_moisture_label }}</span>
+                                <strong class="chip-value" id="valSoilMoist">{{ weather_data.current.soil_moisture }}%</strong>
+                            </div>
+                        </div>
+ 
+                        <div class="quad-chip">
+                            <span class="chip-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="chip-label">{{ t.et0_label }}</span>
+                                <strong class="chip-value" id="valET0">{{ weather_data.current.et0 }} mm/day</strong>
+                            </div>
+                        </div>
+ 
+                        <div class="quad-chip">
+                            <span class="chip-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2v6"/><path d="m4.93 10.93 1.41 1.41"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><line x1="2" y1="18" x2="22" y2="18"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <span class="chip-label">{{ t.sunrise_label }} / {{ t.sunset_label }}</span>
+                                <strong class="chip-value" id="valSunTimes">{{ weather_data.current.sunrise }} / {{ weather_data.current.sunset }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+ 
+                <!-- Agricultural Advisory Column -->
+                <section class="weather-advisory-column">
+                    <!-- Spray Suitability Card -->
+                    <div class="advisory-card spray-card-{{ weather_data.advisory.spray.status }}" id="advisorySprayCard">
+                        <div class="advisory-badge-row">
+                            <span class="advisory-badge" id="advisorySprayBadge">{{ weather_data.advisory.spray.badge }}</span>
+                            <span class="advisory-type">{{ t.spray_advisory_title }}</span>
+                        </div>
+                        <p class="advisory-tip" id="advisorySprayTip">{{ weather_data.advisory.spray.tip }}</p>
+                    </div>
+ 
+                    <!-- Irrigation Guidance Card -->
+                    <div class="advisory-card irrigation-card">
+                        <div class="advisory-badge-row">
+                            <span class="advisory-badge badge-info">{{ t.irrigation_advisory_title }}</span>
+                        </div>
+                        <p class="advisory-tip" id="advisoryIrrigationTip">{{ weather_data.advisory.irrigation.tip }}</p>
+                    </div>
+ 
+                    <!-- Pest & Fungal Risk Card -->
+                    <div class="advisory-card pest-card-{{ weather_data.advisory.pest.status if weather_data.advisory.pest else 'safe' }}">
+                        <div class="advisory-badge-row">
+                            <span class="advisory-badge badge-warning">{{ t.pest_risk_title }}</span>
+                            <span class="risk-level-tag">{{ 'Alert' if weather_data.advisory.pest and weather_data.advisory.pest.status == 'warning' else 'Normal' }}</span>
+                        </div>
+                        <p class="advisory-tip" id="advisoryPestTip">{{ weather_data.advisory.pest.alert if weather_data.advisory.pest else '' }}</p>
+                    </div>
+                </section>
+            </div>
+ 
+            <!-- 48-Hour Best Precision Spray Windows -->
+            <section class="section-card">
+                <div class="section-header-row">
+                    <span class="section-badge">Precision Spray Windows</span>
+                    <h2>{{ t.best_spray_window_title }}</h2>
+                    <p class="advisory-tip">{{ t.best_spray_window_sub }}</p>
+                </div>
+ 
+                <div class="row g-3" id="sprayWindowsContainer">
+                    {% if weather_data.best_spray_windows %}
+                        {% for w in weather_data.best_spray_windows %}
+                            <div class="col-md-4 col-sm-6 mb-3">
+                                <div class="spray-window-card window-status-{{ w.status }}">
+                                    <div class="window-header">
+                                        <span class="window-day">{{ w.day }}</span>
+                                        <span class="window-time">{{ w.hour }}</span>
+                                    </div>
+                                    <div class="window-metrics">
+                                        <span>{{ w.temp }}°C</span> · 
+                                        <span>{{ w.wind }} km/h</span> · 
+                                        <span>{{ w.rain_prob }}% Rain</span>
+                                    </div>
+                                    <span class="window-badge">{{ w.badge }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12">
+                            <p class="advisory-tip">High wind (&gt;15 km/h) or rain (&gt;30%) expected in upcoming periods. Check tomorrow's forecast.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+ 
+            <!-- 24-Hour Hourly Weather Scroll Strip (Clean outline SVGs, zero emojis) -->
+            <section class="section-card">
+                <div class="section-header-row">
+                    <span class="section-badge">Hourly Timeline</span>
+                    <h2 id="hourlyHeading">{{ t.hourly_forecast_heading if t.hourly_forecast_heading else t.hourly_forecast_title }}</h2>
+                </div>
+                
+                <div class="hourly-scroll-shell">
+                <button type="button" class="hourly-scroll-btn hourly-scroll-prev" id="hourlyPrev" aria-controls="hourlyStrip" aria-label="{{ t.scroll_earlier if t.scroll_earlier else 'Show earlier hours' }}" disabled>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button type="button" class="hourly-scroll-btn hourly-scroll-next" id="hourlyNext" aria-controls="hourlyStrip" aria-label="{{ t.scroll_later if t.scroll_later else 'Show later hours' }}">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <div class="hourly-cards-scroll-wrapper" id="hourlyStrip" role="region" aria-labelledby="hourlyHeading" tabindex="0">
+                    {% for h in weather_data.hourly %}
+                        <div class="hourly-card-item">
+                            <span class="hour-time-badge">{{ h.time }}</span>
+                            <div class="hour-weather-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                                </svg>
+                            </div>
+                            <strong class="hour-temp-value">{{ h.temp }}°C</strong>
+                            <span class="hour-rain-pill">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="metric-icon-inline">
+                                    <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>
+                                </svg>
+                                {{ h.rain_prob }}%
+                            </span>
+                            <span class="hour-wind-pill">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="metric-icon-wind">
+                                    <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
+                                </svg>
+                                {{ h.wind_speed }} km/h
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+                </div>
+            </section>
+ 
+            <!-- 7-Day Extended Daily Forecast (Clean outline SVGs, zero emojis) -->
+            <section class="section-card">
+                <div class="section-header-row">
+                    <span class="section-badge">7-Day Outlook</span>
+                    <h2>{{ t.daily_forecast_title }}</h2>
+                </div>
+ 
+                <div class="daily-cards-container" id="dailyList">
+                    {% for d in weather_data.daily %}
+                        <div class="daily-card-row">
+                            <div class="daily-date-col">
+                                <strong class="daily-weekday">{{ d.date }}</strong>
+                            </div>
+                            <div class="daily-icon-col">
+                                {% if d.icon_type == 'sunny' %}
+                                <div class="severity-icon-box weather-sunny" title="Clear / Sunny">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                                </div>
+                                {% elif d.icon_type == 'drizzle_light' %}
+                                <div class="severity-icon-box weather-drizzle-light" title="Light Drizzle">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/><path d="M8 19v1"/><path d="M12 19v1"/><path d="M16 19v1"/></svg>
+                                </div>
+                                {% elif d.icon_type == 'drizzle_heavy' or d.icon_type == 'rain_shower' %}
+                                <div class="severity-icon-box weather-rain-heavy" title="Heavy Rain / Showers">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.89A6 6 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>
+                                </div>
+                                {% elif d.icon_type == 'storm' %}
+                                <div class="severity-icon-box weather-storm" title="Thunderstorm">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m13 15-3 5h4l-2 5"/></svg>
+                                </div>
+                                {% else %}
+                                <div class="severity-icon-box weather-cloudy" title="Partly Cloudy / Overcast">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+                                </div>
+                                {% endif %}
+                            </div>
+ 
+                            <div class="daily-cond-col">
+                                <span class="daily-cond-name">{{ d.condition }}</span>
+                            </div>
+ 
+                            <div class="daily-rain-col">
+                                <span class="rain-prob-pill {% if d.rain_prob > 50 %}rain-level-high{% elif d.rain_prob > 20 %}rain-level-med{% else %}rain-level-low{% endif %}">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>
+                                    </svg>
+                                    {{ d.rain_prob }}% Rain
+                                </span>
+                            </div>
+ 
+                            <div class="daily-temp-col text-end">
+                                <strong class="daily-high-temp">{{ d.max_temp if d.max_temp is defined else (d.temp_max if d.temp_max is defined else '28') }}°C</strong>
+                                <span class="temp-sep">/</span>
+                                <span class="daily-low-temp">{{ d.min_temp if d.min_temp is defined else (d.temp_min if d.temp_min is defined else '20') }}°C</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+ 
+            <!-- Weather Alerts Bar -->
+            {% if weather_data.alerts %}
+                {% for al in weather_data.alerts %}
+                    <div class="weather-alert-banner alert-severity-{{ al.severity }}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <div>
+                            <strong>{{ al.event }}:</strong> {{ al.description }}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </main>
+ 
+    <footer class="app-footer">
+        <div class="page-content footer-inner">
+            <p>© 2026 <strong>{{ t.app_name }}</strong> · {{ t.app_tagline }}</p>
+            <div class="footer-lang-links">
+                <a href="{{ url_for('set_language', lang_code='en') }}">English</a> ·
+                <a href="{{ url_for('set_language', lang_code='hi') }}">हिन्दी</a> ·
+                <a href="{{ url_for('set_language', lang_code='mr') }}">मराठी</a>
+            </div>
+        </div>
+    </footer>
+ 
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // GPS Geolocation Handler
+        const btnGps = document.getElementById('btnUseGps');
+        const statusMsg = document.getElementById('gpsStatusMsg');
+        const fallbackBanner = document.getElementById('geoFallbackBanner');
+        const btnFocusSearch = document.getElementById('btnFocusSearch');
+        const btnDismissGeoBanner = document.getElementById('btnDismissGeoBanner');
+
+        function showFallbackBanner() {
+            if (fallbackBanner) {
+                fallbackBanner.style.display = 'flex';
+            }
+        }
+
+        if (btnDismissGeoBanner && fallbackBanner) {
+            btnDismissGeoBanner.addEventListener('click', function() {
+                fallbackBanner.style.display = 'none';
+            });
+        }
+
+        if (btnFocusSearch) {
+            btnFocusSearch.addEventListener('click', function() {
+                const searchInp = document.getElementById('locationSearchInput');
+                if (searchInp) {
+                    searchInp.focus();
+                    searchInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+ 
+        if (btnGps && statusMsg) {
+            btnGps.addEventListener('click', function() {
+                if (!navigator.geolocation) {
+                    statusMsg.textContent = "{{ t.location_unsupported }}";
+                    statusMsg.className = "gps-status-msg text-danger";
+                    showFallbackBanner();
+                    return;
+                }
+                
+                statusMsg.textContent = "{{ t.location_detecting }}";
+                statusMsg.className = "gps-status-msg text-info";
+                
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+
+                    fetch('/api/location/save', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+                        body: JSON.stringify({ lat: lat, lon: lon })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        window.location.href = `/weather?lat=${lat}&lon=${lon}&name=${encodeURIComponent(data.location_name || 'GPS Location')}`;
+                    })
+                    .catch(err => {
+                        window.location.href = `/weather?lat=${lat}&lon=${lon}&name=GPS Location`;
+                    });
+                }, function(err) {
+                    statusMsg.textContent = "{{ t.location_error }}";
+                    statusMsg.className = "gps-status-msg text-danger";
+                    showFallbackBanner();
+                }, { timeout: 8000, maximumAge: 60000 });
+            });
+        }
+ 
+        // Location Search Input Dropdown
+        const searchInput = document.getElementById('locationSearchInput');
+        const resultsDropdown = document.getElementById('searchResultsDropdown');
+        let debounceTimer;
+ 
+        if (searchInput && resultsDropdown) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    resultsDropdown.style.display = 'none';
+                    return;
+                }
+ 
+                debounceTimer = setTimeout(() => {
+                    fetch(`/api/search-locations?q=${encodeURIComponent(query)}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.results && data.results.length > 0) {
+                                resultsDropdown.innerHTML = '';
+                                data.results.forEach(loc => {
+                                    const item = document.createElement('div');
+                                    item.className = 'search-result-item';
+                                    item.innerHTML = `<strong>${loc.name}</strong> <span class="text-muted small">${loc.state ? loc.state + ', ' : ''}${loc.country}</span>`;
+                                    item.onclick = function() {
+                                        window.location.href = `/weather?lat=${loc.lat}&lon=${loc.lon}&name=${encodeURIComponent(loc.name)}`;
+                                    };
+                                    resultsDropdown.appendChild(item);
+                                });
+                                resultsDropdown.style.display = 'block';
+                            } else {
+                                resultsDropdown.innerHTML = '<div class="p-2 text-muted small">No locations found. Try typing district name.</div>';
+                                resultsDropdown.style.display = 'block';
+                            }
+                        })
+                        .catch(err => console.error(err));
+                }, 300);
+            });
+ 
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !resultsDropdown.contains(e.target)) {
+                    resultsDropdown.style.display = 'none';
+                }
+            });
+        }
+ 
+        // Hourly strip: chevron buttons + edge fades
+        const strip = document.getElementById('hourlyStrip');
+        const prevBtn = document.getElementById('hourlyPrev');
+        const nextBtn = document.getElementById('hourlyNext');
+        if (strip && prevBtn && nextBtn) {
+            const shell = strip.parentElement;
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const update = () => {
+                const canLeft = strip.scrollLeft > 1;
+                const canRight = strip.scrollLeft < strip.scrollWidth - strip.clientWidth - 1;
+                prevBtn.disabled = !canLeft;
+                nextBtn.disabled = !canRight;
+                shell.classList.toggle('can-scroll-left', canLeft);
+                shell.classList.toggle('can-scroll-right', canRight);
+            };
+            const step = dir => strip.scrollBy({ left: dir * strip.clientWidth * 0.8, behavior: reduce ? 'auto' : 'smooth' });
+            prevBtn.addEventListener('click', () => step(-1));
+            nextBtn.addEventListener('click', () => step(1));
+            strip.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', update);
+            update();
+        }
+    });
+    </script>
+</body>
+</html>
+ 

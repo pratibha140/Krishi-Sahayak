@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.practices_page_title }} - {{ t.app_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260917_v3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    {% include "nav.html" %}
+
+    <main id="mainContent" class="page-content tool-page">
+        <!-- Page Header -->
+        <header class="page-header text-center">
+            <div class="eyebrow-pill">
+                <span class="pulse-dot"></span>
+                <span>{{ t.practices_page_eyebrow }}</span>
+            </div>
+            <h1>{{ t.practices_page_title }}</h1>
+            <p>{{ t.practices_page_subtitle }}</p>
+        </header>
+
+        <!-- Section 1: Pesticide Toxicity Color Bands -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Safety Standard</span>
+                <h2>{{ t.toxicity_heading }}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    कीटनाशक के डिब्बे पर छपी रंगीन पट्टी उसकी विषाक्तता का स्तर दर्शाती है। खरीदारी और उपयोग से पहले इस रंग कोड को अवश्य देखें:
+                    {% elif language == 'mr' %}
+                    कीटकनाशकाच्या बाटलीवरील रंगाची पट्टी त्याचे विषारीपण दर्शवते. खरेदी करताना व वापरताना ही रंग पट्टी नक्की तपासा:
+                    {% else %}
+                    The color band on any pesticide container indicates its hazard level. Always check the color label before purchase and handling:
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="row">
+                {% for tox in pesticide_toxicity_classes %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 p-4 border-2 {{ 'border-danger' if tox.color == 'Red' else 'border-warning' if tox.color == 'Yellow' else 'border-primary' if tox.color == 'Blue' else 'border-success' }}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge {{ 'bg-danger' if tox.color == 'Red' else 'bg-warning text-dark' if tox.color == 'Yellow' else 'bg-primary' if tox.color == 'Blue' else 'bg-success' }} fs-6">
+                                {{ tox.name[language] if language in tox.name else tox.name.en }}
+                            </span>
+                            <span class="fw-bold text-muted">{{ tox.color }} Band</span>
+                        </div>
+                        <p class="small mb-2"><strong>{% if language == 'hi' %}उदाहरण रसायन:{% elif language == 'mr' %}उदाहरणे:{% else %}Examples:{% endif %}</strong> {{ tox.examples }}</p>
+                        <div class="p-2 rounded bg-light small">
+                            <strong>{% if language == 'hi' %}सावधानी:{% elif language == 'mr' %}खबरदारी:{% else %}Precaution:{% endif %}</strong> {{ tox.precaution[language] if language in tox.precaution else tox.precaution.en }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Section 2: Emergency First Aid for Pesticide Poisoning -->
+        <section class="section-card mb-5 emergency-section" id="emergency-first-aid">
+            <div class="section-header-row mb-4">
+                <span class="section-badge bg-danger text-white">Emergency Protocol</span>
+                <h2 class="text-danger">{{ t.first_aid_heading }}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    छिड़काव के दौरान यदि किसी किसान या मजदूर को चक्कर, उल्टी या बेचैनी हो तो तुरंत ये 4 प्राथमिक कदम उठाएं:
+                    {% elif language == 'mr' %}
+                    फवारणी करताना चक्कर, उलट्या किंवा अस्वस्थ वाटल्यास तातडीने खालील ४ प्रथमोपचार करा:
+                    {% else %}
+                    Immediate life-saving emergency actions in case of accidental pesticide contamination or poisoning:
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="emergency-steps-grid">
+                <!-- 01 — MOVE TO SAFETY & GET HELP -->
+                <div class="step-card emergency-step-card">
+                    <div class="emergency-step-num" aria-hidden="true">01</div>
+                    <div class="emergency-step-content">
+                        <h3 class="emergency-step-title">{% if language == 'hi' %}सुरक्षित स्थान पर जाएं और सहायता लें{% elif language == 'mr' %}सुरक्षित ठिकाणी जा आणि मदत घ्या{% else %}Move to Safety &amp; Get Help{% endif %}</h3>
+                        <p>{% if language == 'hi' %}कीटनाशक वाले क्षेत्र से तुरंत हटें और ताजी हवा में जाएं यदि धुआं या वाष्प सांस में गई हो। कीटनाशक के अधिक संपर्क से बचें। यदि व्यक्ति बेहोश है, सांस लेने में कठिनाई है, दौरे पड़ रहे हैं या गंभीर लक्षण हैं, तो तुरंत आपातकालीन चिकित्सा सहायता लें।{% elif language == 'mr' %}कीटकनाशक फवारणी क्षेत्रापासून दूर मोकळ्या व ताज्या हवेत जा. कीटकनाशकाशी अधिक संपर्क टाळा. व्यक्ती बेशुद्ध असल्यास, श्वास घेण्यास त्रास होत असल्यास, झटके येत असल्यास किंवा गंभीर लक्षणे दिसल्यास त्वरित आपत्कालीन वैद्यकीय मदत मिळवा.{% else %}Move away from the pesticide exposure area and get to fresh air if fumes were inhaled. Avoid further contact with the pesticide. If the person is unconscious, having difficulty breathing, having seizures, or showing severe symptoms, seek emergency medical help immediately.{% endif %}</p>
+                        <button class="btn-watch-tutorial" onclick="openVideoModal('safety')" type="button" aria-label="{% if language == 'hi' %}सुरक्षित स्थान पर जाएं और सहायता लें वीडियो देखें{% elif language == 'mr' %}सुरक्षित ठिकाणी जा आणि मदत घ्या व्हिडिओ पहा{% else %}Watch Move to Safety &amp; Get Help tutorial{% endif %}">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span>{% if language == 'hi' %}वीडियो देखें{% elif language == 'mr' %}व्हिडिओ पहा{% else %}Watch Tutorial{% endif %}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 02 — SKIN CONTACT -->
+                <div class="step-card emergency-step-card">
+                    <div class="emergency-step-num" aria-hidden="true">02</div>
+                    <div class="emergency-step-content">
+                        <h3 class="emergency-step-title">{% if language == 'hi' %}त्वचा के संपर्क में आने पर{% elif language == 'mr' %}त्वचेवर पडल्यास{% else %}Skin Contact{% endif %}</h3>
+                        <p>{% if language == 'hi' %}दूषित कपड़े तुरंत उतारें। प्रभावित त्वचा को बहते साफ पानी और साबुन से अच्छी तरह धोएं। कीटनाशक को शरीर के अन्य हिस्सों में फैलने न दें। दूषित कपड़ों को धोने के लिए अलग रखें।{% elif language == 'mr' %}दूषित कपडे ताबडतोब काढा. उघडी पडलेली त्वचा भरपूर स्वच्छ वाहत्या पाण्याने आणि साबणाने स्वच्छ धुवा. कीटकनाशक शरीराच्या इतर भागांवर पसरू देऊ नका. दूषित कपडे धुण्यासाठी वेगळे ठेवा.{% else %}Remove contaminated clothing immediately. Wash exposed skin thoroughly with plenty of clean running water and soap. Avoid spreading the pesticide to other areas of the body. Keep contaminated clothing separate for washing.{% endif %}</p>
+                        <button class="btn-watch-tutorial" onclick="openVideoModal('skin')" type="button" aria-label="{% if language == 'hi' %}त्वचा के संपर्क में आने पर वीडियो देखें{% elif language == 'mr' %}त्वचेवर पडल्यास व्हिडिओ पहा{% else %}Watch Skin Contact tutorial{% endif %}">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span>{% if language == 'hi' %}वीडियो देखें{% elif language == 'mr' %}व्हिडिओ पहा{% else %}Watch Tutorial{% endif %}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 03 — INHALATION -->
+                <div class="step-card emergency-step-card">
+                    <div class="emergency-step-num" aria-hidden="true">03</div>
+                    <div class="emergency-step-content">
+                        <h3 class="emergency-step-title">{% if language == 'hi' %}सांस के द्वारा संपर्क{% elif language == 'mr' %}श्वासावाटे संपर्क{% else %}Inhalation{% endif %}</h3>
+                        <p>{% if language == 'hi' %}प्रभावित व्यक्ति को खुद को खतरे में डाले बिना तुरंत ताजी हवा में ले जाएं। व्यक्ति को आरामदायक स्थिति में रखें और उनकी सांस पर नजर रखें। यदि सांस लेने में कठिनाई हो या लक्षण गंभीर हों, तो तुरंत आपातकालीन चिकित्सा सहायता लें।{% elif language == 'mr' %}स्वतःला धोक्यात न घालता बाधित व्यक्तीला तात्काळ ताज्या हवेत न्या. व्यक्तीला आरामदायक ठेवा आणि त्यांच्या श्वासावर लक्ष ठेवा. श्वास घेण्यास त्रास होत असल्यास किंवा लक्षणे गंभीर असल्यास त्वरित आपत्कालीन वैद्यकीय मदत घ्या.{% else %}Move the affected person to fresh air immediately without putting yourself at risk. Keep the person comfortable and monitor their breathing. If breathing is difficult or symptoms are severe, seek emergency medical help immediately.{% endif %}</p>
+                        <button class="btn-watch-tutorial" onclick="openVideoModal('inhalation')" type="button" aria-label="{% if language == 'hi' %}सांस के द्वारा संपर्क वीडियो देखें{% elif language == 'mr' %}श्वासावाटे संपर्क व्हिडिओ पहा{% else %}Watch Inhalation tutorial{% endif %}">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span>{% if language == 'hi' %}वीडियो देखें{% elif language == 'mr' %}व्हिडिओ पहा{% else %}Watch Tutorial{% endif %}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 04 — IF SWALLOWED -->
+                <div class="step-card emergency-step-card">
+                    <div class="emergency-step-num" aria-hidden="true">04</div>
+                    <div class="emergency-step-content">
+                        <h3 class="emergency-step-title">{% if language == 'hi' %}निगलने पर{% elif language == 'mr' %}विषारी पदार्थ गिळल्यास{% else %}If Swallowed{% endif %}</h3>
+                        <p>{% if language == 'hi' %}जब तक डॉक्टर, विष-नियंत्रण केंद्र या उत्पाद लेबल पर विशेष निर्देश न दिया गया हो, उल्टी न कराएं। यदि व्यक्ति होश में है और सक्षम है तो मुंह साफ पानी से कुल्ला कराएं। तुरंत चिकित्सकीय सलाह लें।{% elif language == 'mr' %}डॉक्टर, विष नियंत्रण केंद्र किंवा उत्पादनाच्या लेबलवर स्पष्ट सूचना असल्याशिवाय उलटी करवून घेऊ नका. रुग्ण शुद्धीत असल्यास आणि करू शकत असल्यास तोंड पाण्याने स्वच्छ धुवा. त्वरित वैद्यकीय सल्ला घ्या.{% else %}Do not induce vomiting unless specifically instructed by a medical professional, poison-control service, or the pesticide product label. Rinse the mouth if the person is conscious and able to do so. Seek medical advice immediately.{% endif %}</p>
+                        <button class="btn-watch-tutorial" onclick="openVideoModal('ingestion')" type="button" aria-label="{% if language == 'hi' %}निगलने पर वीडियो देखें{% elif language == 'mr' %}विषारी पदार्थ गिळल्यास व्हिडिओ पहा{% else %}Watch If Swallowed tutorial{% endif %}">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span>{% if language == 'hi' %}वीडियो देखें{% elif language == 'mr' %}व्हिडिओ पहा{% else %}Watch Tutorial{% endif %}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Small Highlighted Medical Information Box Below the 4 Cards -->
+            <div class="emergency-medical-box">
+                <div class="medical-box-icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                        <path d="M12 5v14"/>
+                        <path d="M5 12h14"/>
+                    </svg>
+                </div>
+                <div class="medical-box-content">
+                    <h4 class="medical-box-title">
+                        {% if language == 'hi' %}कीटनाशक का डिब्बा या लेबल साथ ले जाएं{% elif language == 'mr' %}कीटकनाशकाचा डबा किंवा लेबल सोबत घ्या{% else %}Take the Pesticide Container or Label{% endif %}
+                    </h4>
+                    <p class="medical-box-text">
+                        {% if language == 'hi' %}
+                        सुरक्षित होने पर कीटनाशक का मूल डिब्बा, उत्पाद लेबल या लेबल की स्पष्ट तस्वीर डॉक्टर या आपातकालीन सेवा के पास ले जाएं। उत्पाद जानकारी से स्वास्थ्य कर्मियों को कीटनाशक की पहचान करने और उचित उपचार तय करने में मदद मिलती है।
+                        {% elif language == 'mr' %}
+                        सुरक्षित असल्यास कीटकनाशकाचा मूळ डबा, उत्पादनाचे लेबल किंवा लेबलचा स्पष्ट फोटो डॉक्टर किंवा आपत्कालीन सेवेकडे घेऊन जा. उत्पादनाची माहिती आरोग्य कर्मचाऱ्यांना कीटकनाशक ओळखण्यास आणि योग्य उपचार ठरवण्यास मदत करते.
+                        {% else %}
+                        Take the pesticide container, product label, or a clear photo of the label to the doctor or emergency service when it is safe to do so. Product information can help healthcare professionals identify the pesticide and determine appropriate treatment.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Farm Mechanization & Drudgery Reduction Tools -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Farm Machinery</span>
+                <h2>{{ t.mechanization_heading }}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    कम लागत वाले आधुनिक कृषि यंत्र जो बीज व खाद की बचत करते हैं और कठिन शारीरिक श्रम 60% तक घटाते हैं:
+                    {% elif language == 'mr' %}
+                    कमी खर्चाची आधुनिक अवजारे जी बियाणे व खतांची बचत करतात आणि शेतकऱ्यांचे शारीरिक कष्ट ६०% पर्यंत कमी करतात:
+                    {% else %}
+                    Low-cost smart implements that save inputs and reduce physical drudgery by up to 60%:
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="nutrient-grid">
+                {% for tool in farm_mechanization_tools %}
+                <div class="mech-tool-card">
+                    <div class="mech-tool-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <div class="mech-tool-body">
+                        <h4 class="mech-tool-name">{{ tool.name[language] if language in tool.name else tool.name.en }}</h4>
+                        <span class="mech-tool-stage">{{ tool.stage[language] if language in tool.stage else tool.stage.en }}</span>
+                        <p class="mech-tool-benefit">{{ tool.benefit[language] if language in tool.benefit else tool.benefit.en }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Section 4: Home Botanical Pesticide Recipes -->
+        <section class="section-card mb-5">
+            <div class="section-header-row mb-4">
+                <span class="section-badge">Eco-Friendly Solutions</span>
+                <h2>{{ t.botanical_heading }}</h2>
+                <p class="text-muted">
+                    {% if language == 'hi' %}
+                    घर पर नीम, तम्बाकू और जैविक सामग्री से तैयार किए जाने वाले सुरक्षित प्राकृतिक कीटनाशक:
+                    {% elif language == 'mr' %}
+                    घरच्या घरी कडुलिंब, तंबाखू व सेंद्रिय घटकांपासून तयार करता येणारे सुरक्षित नैसर्गिक कीटकनाशक:
+                    {% else %}
+                    Safe organic pesticide formulations you can prepare at home with local farm materials:
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="row">
+                {% for bot in botanical_recipes %}
+                <div class="col-md-4 mb-4">
+                    <div class="botanical-card h-100">
+                        <div class="botanical-card-header">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                            </svg>
+                            <h3>{{ bot.name[language] if language in bot.name else bot.name.en }}</h3>
+                        </div>
+                        <div class="botanical-target-tag">
+                            <strong>{% if language == 'hi' %}लक्षित कीट:{% elif language == 'mr' %}किडी:{% else %}Target Pests:{% endif %}</strong> {{ bot.target[language] if language in bot.target else bot.target.en }}
+                        </div>
+                        <p class="botanical-recipe-text">{{ bot.recipe[language] if language in bot.recipe else bot.recipe.en }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <!-- Emergency Tutorial Video Modal -->
+    <div class="video-modal-overlay" id="videoModalOverlay" onclick="closeVideoModal(event)" role="dialog" aria-modal="true" aria-labelledby="videoModalTitle">
+        <div class="video-modal-box">
+            <button class="video-modal-close" onclick="closeVideoModal(null, true)" type="button" aria-label="Close video tutorial">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="video-modal-header">
+                <div class="video-modal-badge-row">
+                    <span class="section-badge bg-danger text-white" id="videoModalLabel">Emergency First Aid Tutorial</span>
+                    <span class="video-modal-lang-badge" id="videoModalLangBadge"></span>
+                </div>
+                <h3 id="videoModalTitle" class="text-danger"></h3>
+            </div>
+
+            <!-- Fallback Notification Banner (Shown when fallback language is used) -->
+            <div id="videoLangFallbackNotice" class="video-lang-fallback-notice" style="display: none;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span id="videoLangFallbackText"></span>
+            </div>
+
+            <!-- YouTube Video Player Wrap -->
+            <div class="video-modal-iframe-wrap" id="videoModalIframeWrap">
+                <iframe id="videoModalIframe"
+                    src=""
+                    title="Emergency first aid video tutorial"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+            </div>
+
+            <!-- Application-Level Video Error Fallback (Shown if video unavailable/blocked/network error) -->
+            <div id="videoFallbackContainer" class="video-error-fallback" style="display: none;">
+                <div class="video-fallback-icon" aria-hidden="true">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <h4 class="video-fallback-title" id="videoErrorTitle">Tutorial Temporarily Unavailable</h4>
+                <p class="video-fallback-desc" id="videoErrorDesc">Please follow the emergency first-aid instructions above and seek professional medical assistance for serious pesticide exposure.</p>
+                <div class="video-fallback-actions">
+                    <button type="button" class="button secondary btn-fallback-retry" onclick="retryCurrentVideo()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                        <span id="btnRetryText">Retry</span>
+                    </button>
+                    <a id="btnFallbackExternal" href="#" target="_blank" rel="noopener noreferrer" class="button primary btn-fallback-source">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+                        <span id="btnOpenSourceText">Open Video Source</span>
+                    </a>
+                    <button type="button" class="button secondary btn-fallback-close" onclick="closeVideoModal(null, true)">
+                        <span id="btnCloseFallbackText">Close</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Video Player Controls / Help Note -->
+            <div class="video-player-footer-bar">
+                <div class="video-lang-switch-links">
+                    <span class="video-lang-switch-label">{% if language == 'hi' %}वेबसाइट भाषा बदलें:{% elif language == 'mr' %}वेबसाइट भाषा बदला:{% else %}Website Language:{% endif %}</span>
+                    <a href="{{ url_for('set_language', lang_code='hi') }}" class="video-lang-link {{ 'active' if language == 'hi' else '' }}">हिन्दी</a> ·
+                    <a href="{{ url_for('set_language', lang_code='mr') }}" class="video-lang-link {{ 'active' if language == 'mr' else '' }}">मराठी</a> ·
+                    <a href="{{ url_for('set_language', lang_code='en') }}" class="video-lang-link {{ 'active' if language == 'en' else '' }}">English</a>
+                </div>
+                <button type="button" class="btn-text-fallback" id="btnReportLoading" onclick="showVideoErrorFallback()">
+                    Video not loading? Open fallback guidance
+                </button>
+            </div>
+
+            <p class="video-modal-disclaimer" id="videoModalDisclaimer">
+                {% if language == 'hi' %}यह वीडियो सामान्य प्राथमिक उपचार की जानकारी देता है। गंभीर विषाक्तता या गंभीर लक्षणों की स्थिति में तुरंत आपातकालीन चिकित्सा सहायता लें।{% elif language == 'mr' %}हा व्हिडिओ सामान्य प्रथमोपचाराची माहिती देतो. गंभीर विषबाधा किंवा गंभीर लक्षणे आढळल्यास त्वरित आपत्कालीन वैद्यकीय मदत घ्या.{% else %}This tutorial provides general first-aid information. For severe poisoning or serious symptoms, seek emergency medical assistance immediately.{% endif %}
+            </p>
+        </div>
+    </div>
+
+    <footer class="app-footer">
+        <div class="page-content footer-inner">
+            <p>© 2026 <strong>{{ t.app_name }}</strong> · {{ t.app_tagline }}</p>
+            <div class="footer-lang-links">
+                <a href="{{ url_for('set_language', lang_code='en') }}">English</a> ·
+                <a href="{{ url_for('set_language', lang_code='hi') }}">हिन्दी</a> ·
+                <a href="{{ url_for('set_language', lang_code='mr') }}">मराठी</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    // Centralized Multilingual Emergency Tutorials Configuration
+    const emergencyTutorials = {
+        safety: {
+            en: {
+                title: "Move to Safety & Get Help",
+                videoId: "ysmC_m5YzuU"
+            },
+            hi: {
+                title: "सुरक्षित स्थान पर जाएं और सहायता लें",
+                videoId: "qH3l562QSn8"
+            },
+            mr: {
+                title: "सुरक्षित ठिकाणी जा आणि मदत घ्या",
+                videoId: "pk8ULBpN1nE"
+            }
+        },
+
+        skin: {
+            en: {
+                title: "Pesticide Skin Exposure — Emergency First Aid",
+                videoId: "nAW69wIpucQ"
+            },
+            hi: {
+                title: "कीटनाशक त्वचा संपर्क — आपातकालीन प्राथमिक उपचार",
+                videoId: "7GSE_tBaMaU"
+            },
+            mr: {
+                title: "कीटकनाशक त्वचेवर पडल्यास — आपत्कालीन प्रथमोपचार",
+                videoId: null,
+                fallbackLang: "hi",
+                fallbackVideoId: "7GSE_tBaMaU"
+            }
+        },
+
+        inhalation: {
+            en: {
+                title: "Pesticide Inhalation — Emergency First Aid",
+                videoId: "zMSiv4HaX7Y"
+            },
+            hi: {
+                title: "सांस के द्वारा संपर्क — आपातकालीन प्राथमिक उपचार",
+                videoId: "jFDkIEjUse0"
+            },
+            mr: {
+                title: "श्वासावाटे संपर्क — आपत्कालीन प्रथमोपचार",
+                videoId: null,
+                fallbackLang: "hi",
+                fallbackVideoId: "jFDkIEjUse0"
+            }
+        },
+
+        ingestion: {
+            en: {
+                title: "Pesticide Ingestion — Emergency First Aid",
+                videoId: "fCqhCYFMgTs"
+            },
+            hi: {
+                title: "कीटनाशक निगलने पर — आपातकालीन प्राथमिक उपचार",
+                videoId: "1bALtkUfmP8"
+            },
+            mr: {
+                title: "विषारी पदार्थ गिळल्यास — आपत्कालीन प्रथमोपचार",
+                videoId: null,
+                fallbackLang: "hi",
+                fallbackVideoId: "1bALtkUfmP8"
+            }
+        }
+    };
+
+    // Multilingual UI strings for the modal
+    const emergencyStrings = {
+        en: {
+            modalBadge: "Emergency First Aid Tutorial",
+            langBadge: "English Tutorial",
+            warning: "This tutorial provides general first-aid information. For severe poisoning or serious symptoms, seek emergency medical assistance immediately.",
+            errorTitle: "Tutorial temporarily unavailable.",
+            errorDesc: "Please follow the emergency first-aid instructions above and seek professional medical assistance for serious pesticide exposure.",
+            btnRetry: "Retry",
+            btnClose: "Close",
+            btnSource: "Open Video Source",
+            reportLoading: "Video not loading? Open fallback guidance",
+            fallbackNotice: (langName) => `The video in your selected language is currently not available. The tutorial below in ${langName} provides equivalent first-aid guidance.`
+        },
+        hi: {
+            modalBadge: "आपातकालीन प्राथमिक उपचार ट्यूटोरियल",
+            langBadge: "हिन्दी ट्यूटोरियल",
+            warning: "यह वीडियो सामान्य प्राथमिक उपचार की जानकारी देता है। गंभीर विषाक्तता या गंभीर लक्षणों की स्थिति में तुरंत आपातकालीन चिकित्सा सहायता लें।",
+            errorTitle: "वीडियो अभी उपलब्ध नहीं है।",
+            errorDesc: "कृपया ऊपर दिए गए आपातकालीन प्राथमिक उपचार निर्देशों का पालन करें और गंभीर विषाक्तता के लिए तुरंत चिकित्सीय सहायता लें।",
+            btnRetry: "पुनः प्रयास करें",
+            btnClose: "बंद करें",
+            btnSource: "वीडियो स्रोत खोलें",
+            reportLoading: "वीडियो नहीं चल रहा है? आपातकालीन सहायता देखें",
+            fallbackNotice: (langName) => `हिंदी वीडियो अभी उपलब्ध नहीं है। नीचे दिए गए (${langName}) वीडियो में समान प्राथमिक उपचार जानकारी दी गई है।`
+        },
+        mr: {
+            modalBadge: "आपत्कालीन प्रथमोपचार ट्युटोरिअल",
+            langBadge: "मराठी ट्युटोरिअल",
+            warning: "हा व्हिडिओ सामान्य प्रथमोपचाराची माहिती देतो. गंभीर विषबाधा किंवा गंभीर लक्षणे आढळल्यास त्वरित आपत्कालीन वैद्यकीय मदत घ्या.",
+            errorTitle: "व्हिडिओ सध्या उपलब्ध नाही.",
+            errorDesc: "कृपया वरील आपत्कालीन प्रथमोपचार सूचनांचे पालन करा आणि गंभीर विषबाधेसाठी त्वरित वैद्यकीय मदत मिळवा.",
+            btnRetry: "पुन्हा प्रयत्न करा",
+            btnClose: "बंद करा",
+            btnSource: "व्हिडिओ स्रोत उघडा",
+            reportLoading: "व्हिडिओ दिसत नाही का? पर्यायी मदत पहा",
+            fallbackNotice: (langName) => "मराठी व्हिडिओ सध्या उपलब्ध नाही. खालील हिंदी व्हिडिओमध्ये समान प्रथमोपचार माहिती दिली आहे."
+        }
+    };
+
+    // Detects current website global language state
+    function getCurrentLanguage() {
+        const docLang = (document.documentElement.lang || '').trim().toLowerCase();
+        if (docLang === 'hi' || docLang === 'mr' || docLang === 'en') {
+            return docLang;
+        }
+        return '{{ language }}' || 'en';
+    }
+
+    let currentTutorialKey = null;
+
+    function openVideoModal(stepKey) {
+        const tutorial = emergencyTutorials[stepKey];
+        if (!tutorial) return;
+
+        // Stop any currently playing video first
+        stopAndClearVideo();
+
+        currentTutorialKey = stepKey;
+        const currentLang = getCurrentLanguage();
+        const strings = emergencyStrings[currentLang] || emergencyStrings['en'];
+
+        // Retrieve the language-specific entry or fallback
+        const langConfig = tutorial[currentLang] || tutorial['en'];
+        let activeVideoId = langConfig.videoId;
+        let isFallback = false;
+        let fallbackLangName = 'English';
+
+        if (!activeVideoId) {
+            // Check fallback in order: specified fallback, Hindi, English
+            if (langConfig.fallbackVideoId) {
+                activeVideoId = langConfig.fallbackVideoId;
+                fallbackLangName = (langConfig.fallbackLang === 'hi') ? 'Hindi' : 'English';
+            } else if (tutorial['hi'] && tutorial['hi'].videoId) {
+                activeVideoId = tutorial['hi'].videoId;
+                fallbackLangName = 'Hindi';
+            } else if (tutorial['en'] && tutorial['en'].videoId) {
+                activeVideoId = tutorial['en'].videoId;
+                fallbackLangName = 'English';
+            }
+            isFallback = true;
+        }
+
+        // Set localized title
+        document.getElementById('videoModalTitle').textContent = langConfig.title;
+
+        // Localize modal header badge and warning disclaimer
+        const badgeEl = document.getElementById('videoModalLabel');
+        if (badgeEl) badgeEl.textContent = strings.modalBadge;
+
+        const langBadgeEl = document.getElementById('videoModalLangBadge');
+        if (langBadgeEl) langBadgeEl.textContent = strings.langBadge;
+
+        const disclaimerEl = document.getElementById('videoModalDisclaimer');
+        if (disclaimerEl) disclaimerEl.textContent = strings.warning;
+
+        // Localize error fallback UI elements
+        const errTitleEl = document.getElementById('videoErrorTitle');
+        if (errTitleEl) errTitleEl.textContent = strings.errorTitle;
+
+        const errDescEl = document.getElementById('videoErrorDesc');
+        if (errDescEl) errDescEl.textContent = strings.errorDesc;
+
+        const retryBtnEl = document.getElementById('btnRetryText');
+        if (retryBtnEl) retryBtnEl.textContent = strings.btnRetry;
+
+        const closeBtnEl = document.getElementById('btnCloseFallbackText');
+        if (closeBtnEl) closeBtnEl.textContent = strings.btnClose;
+
+        const sourceBtnEl = document.getElementById('btnOpenSourceText');
+        if (sourceBtnEl) sourceBtnEl.textContent = strings.btnSource;
+
+        const reportBtnEl = document.getElementById('btnReportLoading');
+        if (reportBtnEl) reportBtnEl.textContent = strings.reportLoading;
+
+        // Handle language fallback notice display
+        const fallbackNoticeBox = document.getElementById('videoLangFallbackNotice');
+        const fallbackNoticeText = document.getElementById('videoLangFallbackText');
+        if (isFallback) {
+            fallbackNoticeText.textContent = strings.fallbackNotice(fallbackLangName);
+            fallbackNoticeBox.style.display = 'flex';
+        } else {
+            fallbackNoticeBox.style.display = 'none';
+        }
+
+        // Reset player vs error display state
+        const iframeWrap = document.getElementById('videoModalIframeWrap');
+        const errorFallbackBox = document.getElementById('videoFallbackContainer');
+        const externalBtn = document.getElementById('btnFallbackExternal');
+        const iframe = document.getElementById('videoModalIframe');
+
+        if (errorFallbackBox) errorFallbackBox.style.display = 'none';
+        if (iframeWrap) iframeWrap.style.display = 'block';
+
+        if (externalBtn && activeVideoId) {
+            externalBtn.href = 'https://www.youtube.com/watch?v=' + activeVideoId;
+        }
+
+        // Load proper YouTube embed iframe URL
+        if (activeVideoId) {
+            iframe.src = 'https://www.youtube.com/embed/' + activeVideoId + '?autoplay=1&rel=0&enablejsapi=1';
+        } else {
+            showVideoErrorFallback();
+        }
+
+        // Show modal overlay
+        const overlay = document.getElementById('videoModalOverlay');
+        overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function stopAndClearVideo() {
+        const iframe = document.getElementById('videoModalIframe');
+        if (iframe) {
+            iframe.src = '';
+        }
+    }
+
+    function closeVideoModal(e, force) {
+        if (!force && e && e.target !== document.getElementById('videoModalOverlay')) return;
+
+        // Stop video completely and clear iframe src
+        stopAndClearVideo();
+
+        const overlay = document.getElementById('videoModalOverlay');
+        if (overlay) overlay.classList.remove('show');
+
+        // Reset states
+        const errorFallbackBox = document.getElementById('videoFallbackContainer');
+        const iframeWrap = document.getElementById('videoModalIframeWrap');
+        const fallbackNoticeBox = document.getElementById('videoLangFallbackNotice');
+
+        if (errorFallbackBox) errorFallbackBox.style.display = 'none';
+        if (iframeWrap) iframeWrap.style.display = 'block';
+        if (fallbackNoticeBox) fallbackNoticeBox.style.display = 'none';
+
+        currentTutorialKey = null;
+        document.body.style.overflow = '';
+    }
+
+    function showVideoErrorFallback() {
+        const iframeWrap = document.getElementById('videoModalIframeWrap');
+        const errorFallbackBox = document.getElementById('videoFallbackContainer');
+
+        // Stop video in iframe
+        stopAndClearVideo();
+
+        if (iframeWrap) iframeWrap.style.display = 'none';
+        if (errorFallbackBox) errorFallbackBox.style.display = 'flex';
+    }
+
+    function retryCurrentVideo() {
+        if (currentTutorialKey) {
+            openVideoModal(currentTutorialKey);
+        }
+    }
+
+    // Keyboard ESC key closes modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeVideoModal(null, true);
+        }
+    });
+
+    // Listen for YouTube player error events
+    window.addEventListener('message', function(event) {
+        try {
+            if (typeof event.data === 'string') {
+                const data = JSON.parse(event.data);
+                if (data.event === 'onError' || (data.info && data.info.playerState === -1 && data.event === 'initialDelivery')) {
+                    showVideoErrorFallback();
+                }
+            }
+        } catch (err) {
+            // Ignore unrelated cross-origin messages
+        }
+    });
+    </script>
+</body>
+</html>
+

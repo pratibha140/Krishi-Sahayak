@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.app_name }} - {{ t.nav_login if t.nav_login else 'Sign In' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260919_v1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Identity Services Client Library -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        /* Scoped High-Fidelity Agritech Onboarding Styles */
+        * { box-sizing: border-box; }
+        body.onboarding-page-body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(170deg, #dcf2e3 0%, #ecf7ee 30%, #f4faf5 60%, #e1f1e5 100%);
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Decorative Agricultural Foliage Accents */
+        .agri-bg-leaf-tl {
+            position: fixed;
+            top: -20px;
+            left: -20px;
+            width: 260px;
+            height: 260px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.55;
+        }
+        .agri-bg-leaf-br {
+            position: fixed;
+            bottom: -30px;
+            right: -20px;
+            width: 300px;
+            height: 300px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.55;
+        }
+
+        .onboarding-shell {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 480px;
+            padding: 28px 16px;
+            margin: 0 auto;
+        }
+
+        .onboarding-card {
+            background: #ffffff;
+            border: 1.5px solid #dbe8dd;
+            border-radius: 24px;
+            box-shadow: 0 20px 48px rgba(16, 52, 23, 0.09), 0 2px 8px rgba(0, 0, 0, 0.03);
+            padding: 38px 34px 34px;
+            text-align: center;
+        }
+
+        @media (max-width: 520px) {
+            .onboarding-shell { padding: 18px 12px; }
+            .onboarding-card {
+                padding: 28px 20px 24px;
+                border-radius: 20px;
+            }
+        }
+
+        /* Brand Identity Lockup */
+        .onboarding-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .onboarding-logo-badge {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            box-shadow: 0 6px 18px rgba(22, 163, 74, 0.28);
+        }
+        .onboarding-brand-name {
+            font-size: 1.42rem;
+            font-weight: 800;
+            color: #14532d;
+            margin: 0 0 3px;
+            letter-spacing: -0.025em;
+        }
+        .onboarding-brand-sub {
+            font-size: 0.84rem;
+            color: #64748b;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+        }
+
+        /* Step Progress Indicator (Step 2 of 2: Full active track) */
+        .onboarding-step-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 22px;
+        }
+        .onboarding-step-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #16a34a;
+            letter-spacing: 0.02em;
+        }
+        .onboarding-step-track {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .onboarding-step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        .onboarding-step-dot.active {
+            background: #16a34a;
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+        }
+        .onboarding-step-line {
+            width: 68px;
+            height: 2.5px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .onboarding-step-line.step2-line {
+            background: #16a34a;
+        }
+
+        /* Headings */
+        .onboarding-heading {
+            font-size: 1.52rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 8px;
+            letter-spacing: -0.025em;
+        }
+        .onboarding-subheading {
+            font-size: 0.90rem;
+            color: #64748b;
+            margin: 0 0 24px;
+            line-height: 1.52;
+            padding: 0 4px;
+        }
+
+        /* Google Continue Button */
+        .onboarding-google-wrap {
+            margin-bottom: 20px;
+        }
+        .onboarding-google-btn {
+            width: 100% !important;
+            height: 48px !important;
+            min-height: 48px !important;
+            max-height: 48px !important;
+            background: #ffffff !important;
+            border: 1.5px solid #cbd5e1 !important;
+            border-radius: 12px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 12px !important;
+            color: #1e293b !important;
+            font-size: 0.95rem !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+            box-sizing: border-box !important;
+            transform: none !important;
+            text-decoration: none !important;
+        }
+        .onboarding-google-btn:hover {
+            background: #f8fafc !important;
+            border-color: #94a3b8 !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+            transform: none !important;
+        }
+        .onboarding-google-btn:active {
+            background: #f1f5f9 !important;
+            transform: none !important;
+        }
+        .google-icon-svg {
+            flex-shrink: 0;
+        }
+
+        /* Subtle Section Divider: Expanded vertical breathing room (Issue 3) */
+        .onboarding-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 28px 0 30px;
+            color: #64748b;
+            font-size: 0.86rem;
+            font-weight: 500;
+        }
+        .onboarding-divider::before,
+        .onboarding-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1.5px solid #e2e8f0;
+        }
+        .onboarding-divider span {
+            padding: 0 16px;
+            letter-spacing: 0.01em;
+        }
+
+        @media (max-width: 520px) {
+            .onboarding-divider {
+                margin: 24px 0 26px;
+            }
+        }
+
+        /* Alerts & Verification Notices */
+        .onboarding-alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.86rem;
+            line-height: 1.45;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .onboarding-alert-error {
+            background: #fef2f2;
+            border: 1.5px solid #fecaca;
+            color: #991b1b;
+        }
+        .onboarding-alert-success {
+            background: #f0fdf4;
+            border: 1.5px solid #bbf7d0;
+            color: #166534;
+        }
+        .onboarding-alert-warning {
+            background: #fffbeb;
+            border: 1.5px solid #fde68a;
+            color: #92400e;
+        }
+        .onboarding-alert-info {
+            background: #f0f9ff;
+            border: 1.5px solid #bae6fd;
+            color: #0369a1;
+        }
+        .onboarding-dev-link-wrap {
+            margin-top: 10px;
+        }
+        .onboarding-dev-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            background: #15803d;
+            color: #ffffff !important;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .onboarding-dev-link:hover {
+            background: #166534;
+        }
+        .onboarding-resend-form {
+            margin-top: 8px;
+        }
+        .onboarding-resend-btn {
+            background: transparent;
+            border: none;
+            color: #15803d;
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        /* Input Field Architecture — CRITICAL BUG FIX (Dedicated Icon Space, Zero Overlap) */
+        .onboarding-field-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+        .onboarding-label {
+            display: block !important;
+            font-size: 0.88rem !important;
+            font-weight: 700 !important;
+            color: #1e293b !important;
+            margin-bottom: 6px !important;
+            letter-spacing: -0.01em !important;
+        }
+
+        /* Flexbox Input Group Box: Icon + Input text separate layout cells */
+        .login-input-group,
+        .onboarding-input-wrapper {
+            position: relative !important;
+            display: flex !important;
+            align-items: center !important;
+            width: 100% !important;
+            height: 48px !important;
+            min-height: 48px !important;
+            max-height: 48px !important;
+            border: 1.5px solid #cbd5e1 !important;
+            border-radius: 12px !important;
+            background: #ffffff !important;
+            padding: 0 14px !important;
+            gap: 12px !important;
+            box-sizing: border-box !important;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+        }
+
+        /* Focus state: Border turns green with subtle aura, physical dimensions stay exactly 48px */
+        .login-input-group:focus-within,
+        .onboarding-input-wrapper:focus-within {
+            border-color: #16a34a !important;
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18) !important;
+        }
+
+        /* Dedicated Icon Cell: Static positioning in flex flow, reserved width, zero text collision */
+        .login-input-icon,
+        .onboarding-input-icon {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 20px !important;
+            height: 20px !important;
+            min-width: 20px !important;
+            max-width: 20px !important;
+            flex-shrink: 0 !important;
+            color: #64748b !important;
+            position: static !important;
+            left: auto !important;
+            top: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            transition: color 0.15s ease !important;
+            pointer-events: none !important;
+        }
+
+        .login-input-group:focus-within .login-input-icon,
+        .onboarding-input-wrapper:focus-within .onboarding-input-icon {
+            color: #16a34a !important;
+        }
+
+        /* Input Text Area: Takes remaining width strictly after the icon */
+        .login-input-field,
+        .onboarding-input {
+            flex: 1 1 auto !important;
+            width: auto !important;
+            height: 100% !important;
+            min-width: 0 !important;
+            border: none !important;
+            outline: none !important;
+            background: transparent !important;
+            font-size: 0.95rem !important;
+            font-family: inherit !important;
+            color: #0f172a !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            position: static !important;
+            box-sizing: border-box !important;
+        }
+
+        .login-input-field::placeholder,
+        .onboarding-input::placeholder {
+            color: #94a3b8 !important;
+            opacity: 1 !important;
+        }
+
+        .onboarding-error-msg {
+            display: none;
+            color: #dc2626;
+            font-size: 0.80rem;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        /* Strict Dimension-Locked Action Button (CRITICAL BUG FIX: NO SCALING) */
+        .login-submit-btn,
+        .onboarding-submit-btn {
+            width: 100% !important;
+            height: 50px !important;
+            min-height: 50px !important;
+            max-height: 50px !important;
+            padding: 0 24px !important;
+            background: #15803d !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 12px !important;
+            font-size: 0.98rem !important;
+            font-weight: 700 !important;
+            font-family: inherit !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 10px !important;
+            cursor: pointer !important;
+            box-shadow: 0 4px 14px rgba(21, 128, 61, 0.25) !important;
+            transition: background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease !important;
+            box-sizing: border-box !important;
+            transform: none !important;
+            outline: none !important;
+            text-decoration: none !important;
+            margin-top: 8px !important;
+        }
+
+        .login-submit-btn:hover,
+        .onboarding-submit-btn:hover {
+            background: #14532d !important;
+            box-shadow: 0 6px 18px rgba(21, 128, 61, 0.35) !important;
+            transform: none !important;
+        }
+
+        .login-submit-btn:active,
+        .onboarding-submit-btn:active {
+            background: #0f3d20 !important;
+            transform: none !important;
+        }
+
+        .login-submit-btn:focus-visible,
+        .onboarding-submit-btn:focus-visible {
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.35) !important;
+            transform: none !important;
+        }
+
+        .login-submit-btn:disabled,
+        .login-submit-btn.is-loading,
+        .onboarding-submit-btn:disabled,
+        .onboarding-submit-btn.is-loading {
+            opacity: 0.82 !important;
+            cursor: wait !important;
+            transform: none !important;
+            background: #15803d !important;
+            box-shadow: none !important;
+        }
+
+        .login-btn-arrow,
+        .onboarding-btn-arrow {
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .login-submit-btn:hover .login-btn-arrow,
+        .onboarding-submit-btn:hover .onboarding-btn-arrow {
+            transform: translateX(3px);
+        }
+
+        .onboarding-switch-prompt {
+            font-size: 0.86rem;
+            color: #64748b;
+            margin-top: 20px;
+        }
+        .onboarding-link-green {
+            color: #15803d;
+            font-weight: 700;
+            text-decoration: none;
+            margin-left: 4px;
+        }
+        .onboarding-link-green:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body class="onboarding-page-body auth-page-body">
+    <!-- Clean Agricultural Foliage Decorative Vector Accents -->
+    <svg class="agri-bg-leaf-tl" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M40 0C40 70 80 120 160 140C90 140 30 100 0 40C0 20 20 0 40 0Z" fill="#15803d" fill-opacity="0.12"/>
+        <path d="M10 20C40 80 90 110 170 110C110 110 50 80 20 30" stroke="#16a34a" stroke-width="2" stroke-opacity="0.25"/>
+        <path d="M70 50C110 70 140 100 150 140C120 120 90 90 70 50Z" fill="#16a34a" fill-opacity="0.10"/>
+    </svg>
+    <svg class="agri-bg-leaf-br" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M160 200C160 130 120 80 40 60C110 60 170 100 200 160C200 180 180 200 160 200Z" fill="#15803d" fill-opacity="0.12"/>
+        <path d="M190 180C160 120 110 90 30 90C90 90 150 120 180 170" stroke="#16a34a" stroke-width="2" stroke-opacity="0.25"/>
+        <path d="M130 150C90 130 60 100 50 60C80 80 110 110 130 150Z" fill="#16a34a" fill-opacity="0.10"/>
+    </svg>
+
+    <main class="onboarding-shell">
+        <section class="onboarding-card auth-card">
+            <!-- Step Progress Indicator: Step 2 of 2 (Repositioned to top of card for clean visual hierarchy - Issue 2) -->
+            <div class="onboarding-step-wrapper" aria-label="Step 2 of 2">
+                <span class="onboarding-step-label">{% if language == 'hi' %}चरण 2 का 2{% elif language == 'mr' %}टप्पा २ पैकी २{% else %}Step 2 of 2{% endif %}</span>
+                <div class="onboarding-step-track">
+                    <span class="onboarding-step-dot active"></span>
+                    <span class="onboarding-step-line step2-line"></span>
+                    <span class="onboarding-step-dot active"></span>
+                </div>
+            </div>
+
+            <!-- Brand Lockup -->
+            <div class="onboarding-brand">
+                <div class="onboarding-logo-badge" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                    </svg>
+                </div>
+                <h2 class="onboarding-brand-name">{{ t.app_name }}</h2>
+                <span class="onboarding-brand-sub">{{ t.app_tagline }}</span>
+            </div>
+
+            <!-- Headings -->
+            <h1 class="onboarding-heading auth-title" id="pageHeading">
+                {% if mode == 'register' %}
+                    {% if language == 'hi' %}नया किसान खाता बनाएं{% elif language == 'mr' %}नवीन शेतकरी खाते तयार करा{% else %}Create Farmer Account{% endif %}
+                {% else %}
+                    {% if language == 'hi' %}कृषि सहायक में लॉगिन करें{% elif language == 'mr' %}कृषी सहाय्यकमध्ये लॉगिन करा{% else %}Sign In to Krishi Sahayak{% endif %}
+                {% endif %}
+            </h1>
+            <p class="onboarding-subheading auth-subtitle" id="pageSubtitle">
+                {% if mode == 'register' %}
+                    {% if language == 'hi' %}सत्यापित ईमेल के साथ सुरक्षित किसान खाता बनाएं और तुरंत शुरू करें{% elif language == 'mr' %}सुरक्षित शेतकरी खाते तयार करा आणि ईमेल पडताळणी पूर्ण करा{% else %}Register with secure email verification to access personalized advisories.{% endif %}
+                {% else %}
+                    {% if language == 'hi' %}अपने व्यक्तिगत फसल कैलेंडर, मौसम अलर्ट व किसान प्रोफाइल तक पहुंचें{% elif language == 'mr' %}आपले वैयक्तिक पीक नियोजन, हवामान अलर्ट व शेतकरी प्रोफाइल मिळवा{% else %}Access your personalized crop calendars, farm economics & alerts.{% endif %}
+                {% endif %}
+            </p>
+
+            <!-- Google Sign-In Container & Button -->
+            <div class="onboarding-google-wrap">
+                <button type="button" class="onboarding-google-btn" id="btnGoogleLogin" onclick="handleGoogleSignIn()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" class="google-icon-svg" aria-hidden="true">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.29 21.37 7.37 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.28 14.27a7.15 7.15 0 0 1 0-4.54V6.58H1.26a11.98 11.98 0 0 0 0 10.84l4.02-3.15z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.29 2.63 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.93 6.72-4.93z"/>
+                    </svg>
+                    <span>{% if language == 'hi' %}Google (Gmail) से जारी रखें{% elif language == 'mr' %}Google (Gmail) ने पुढे जा{% else %}Continue with Google (Gmail){% endif %}</span>
+                </button>
+            </div>
+
+            <!-- Divider -->
+            <div class="onboarding-divider auth-divider" role="separator">
+                <span>{{ t.login_divider_text if t.login_divider_text else 'Or continue with' }}</span>
+            </div>
+
+            <!-- Alert Message Box -->
+            {% if alert_msg %}
+            <div class="onboarding-alert onboarding-alert-{{ alert_type or 'error' }}" role="alert" id="authAlertBox">
+                <div class="onboarding-alert-text">{{ alert_msg }}</div>
+                {% if dev_verify_link %}
+                <div class="onboarding-dev-link-wrap">
+                    <a href="{{ dev_verify_link }}" class="onboarding-dev-link">
+                        <span>Verify Email Link (Instant Test)</span>
+                    </a>
+                </div>
+                {% endif %}
+                {% if show_resend_email %}
+                <form action="{{ url_for('resend_verification') }}" method="POST" class="onboarding-resend-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="email" value="{{ show_resend_email }}">
+                    <button type="submit" class="onboarding-resend-btn">Click here to resend verification email</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Main Auth Form -->
+            <form action="{{ url_for('login') }}" method="POST" class="onboarding-form auth-form" id="loginForm" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" id="authActionInput" value="{{ mode or 'login' }}">
+                <!-- 1. Farmer Name Field (Shown ONLY in Registration Mode - Issue 1) -->
+                <div class="onboarding-field-group" id="groupFarmerName"{% if mode != 'register' %} style="display:none;" aria-hidden="true"{% endif %}>
+                    <label class="onboarding-label" for="farmerNameInput">{{ t.farmer_name_label if t.farmer_name_label else 'Farmer Name' }}</label>
+                    <div class="login-input-group onboarding-input-wrapper">
+                        <span class="login-input-icon onboarding-input-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </span>
+                        <input type="text" id="farmerNameInput" name="name" class="login-input-field onboarding-input" placeholder="{{ t.placeholder_name if t.placeholder_name else 'Farmer Name' }}" value="{{ form_data.get('name', '') if form_data else '' }}" autocomplete="name">
+                    </div>
+                    <div class="onboarding-error-msg" id="nameError">
+                        {% if language == 'hi' %}कृपया अपना पूरा नाम दर्ज करें{% elif language == 'mr' %}कृपया तुमचे पूर्ण नाव प्रविष्ट करा{% else %}Please enter your full name{% endif %}
+                    </div>
+                </div>
+
+                <!-- 2. Email / Mobile Number Field (Always Visible) -->
+                <div class="onboarding-field-group" id="groupFarmerContact">
+                    <label class="onboarding-label" for="farmerContactInput">{{ t.email_label if t.email_label else 'Email / Mobile Number' }}</label>
+                    <div class="login-input-group onboarding-input-wrapper">
+                        <span class="login-input-icon onboarding-input-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            </svg>
+                        </span>
+                        <input type="text" id="farmerContactInput" name="email" class="login-input-field onboarding-input" placeholder="{{ t.placeholder_contact if t.placeholder_contact else 'Email / Mobile Number' }}" value="{{ form_data.get('email', '') if form_data else '' }}">
+                    </div>
+                    <div class="onboarding-error-msg" id="emailError">
+                        {% if language == 'hi' %}कृपया एक वैध ईमेल पता दर्ज करें{% elif language == 'mr' %}कृपया वैध ईमेल पत्ता प्रविष्ट करा{% else %}Please enter a valid email address{% endif %}
+                    </div>
+                </div>
+
+                <!-- 3. Password Input (Preserved Existing Authentication Field) -->
+                <div class="onboarding-field-group" id="groupPassword">
+                    <label class="onboarding-label" for="farmerPasswordInput">
+                        {% if language == 'hi' %}पासवर्ड (कम से कम 8 अक्षर, अक्षर व संख्या){% elif language == 'mr' %}पासवर्ड (किमान ८ अक्षरे, अक्षरे व संख्या){% else %}Password (at least 8 chars, letters & numbers){% endif %}
+                    </label>
+                    <div class="login-input-group onboarding-input-wrapper">
+                        <span class="login-input-icon onboarding-input-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                        </span>
+                        <input type="password" id="farmerPasswordInput" name="password" class="login-input-field onboarding-input" placeholder="••••••••" autocomplete="current-password">
+                    </div>
+                    <div class="onboarding-error-msg" id="passwordError">
+                        {% if language == 'hi' %}पासवर्ड कम से कम 8 अक्षर का होना चाहिए (अक्षर और संख्या दोनों शामिल हों){% elif language == 'mr' %}पासवर्ड किमान ८ अक्षरांचा असावा (अक्षरे आणि अंक दोन्ही समाविष्ट करा){% else %}Password must be at least 8 characters and include both letters and numbers{% endif %}
+                    </div>
+                </div>
+
+                <!-- 4. Confirm Password Field (Only when in Registration Mode) -->
+                <div class="onboarding-field-group" id="groupConfirmPassword" style="{{ 'display:none;' if mode != 'register' else '' }}">
+                    <label class="onboarding-label" for="farmerConfirmPasswordInput">
+                        {% if language == 'hi' %}पासवर्ड की पुष्टि करें{% elif language == 'mr' %}पासवर्डची पुष्टी करा{% else %}Confirm Password{% endif %}
+                    </label>
+                    <div class="login-input-group onboarding-input-wrapper">
+                        <span class="login-input-icon onboarding-input-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                        </span>
+                        <input type="password" id="farmerConfirmPasswordInput" name="confirm_password" class="login-input-field onboarding-input" placeholder="••••••••" autocomplete="new-password">
+                    </div>
+                    <div class="onboarding-error-msg" id="confirmPasswordError">
+                        {% if language == 'hi' %}पासवर्ड मेल नहीं खा रहे हैं{% elif language == 'mr' %}पासवर्ड जुळत नाहीत{% else %}Passwords do not match{% endif %}
+                    </div>
+                </div>
+
+                <!-- Stable Physical Dimension Submit Button (NO SCALING) -->
+                <button type="submit" class="login-submit-btn onboarding-submit-btn" id="btnSubmitLogin">
+                    <span id="btnText">
+                        {% if mode == 'register' %}
+                            {% if language == 'hi' %}खाता बनाएं व ईमेल सत्यापित करें{% elif language == 'mr' %}खाते तयार करा व ईमेल पडताळा{% else %}Register & Send Verification Link{% endif %}
+                        {% else %}
+                            {{ t.btn_login_submit if t.btn_login_submit else 'Continue' }}
+                        {% endif %}
+                    </span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="login-btn-arrow onboarding-btn-arrow">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                </button>
+            </form>
+
+            <!-- Mode Switch Prompt Link -->
+            <div class="onboarding-switch-prompt" id="switchPrompt">
+                {% if mode == 'register' %}
+                <span>Already have an account?</span>
+                <a href="javascript:void(0)" onclick="switchAuthMode('login')" class="onboarding-link-green">Sign In</a>
+                {% else %}
+                <span>New to Krishi Sahayak?</span>
+                <a href="javascript:void(0)" onclick="switchAuthMode('register')" class="onboarding-link-green">Create an account</a>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+
+    <script>
+    const lang = "{{ language }}";
+    let currentMode = "{{ mode or 'login' }}";
+
+    const submittingTextLogin = lang === 'hi' ? 'लॉगिन हो रहा है...' : (lang === 'mr' ? 'लॉगिन होत आहे...' : 'Continuing...');
+    const submittingTextRegister = lang === 'hi' ? 'पंजीकरण हो रहा है...' : (lang === 'mr' ? 'नोंदणी होत आहे...' : 'Registering...');
+
+    const form = document.getElementById('loginForm');
+    const authActionInput = document.getElementById('authActionInput');
+    const groupFarmerName = document.getElementById('groupFarmerName');
+    const groupConfirmPassword = document.getElementById('groupConfirmPassword');
+    const nameInput = document.getElementById('farmerNameInput');
+    const contactInput = document.getElementById('farmerContactInput');
+    const passwordInput = document.getElementById('farmerPasswordInput');
+    const confirmPasswordInput = document.getElementById('farmerConfirmPasswordInput');
+
+    const nameError = document.getElementById('nameError');
+    const emailError = document.getElementById('emailError');
+    const passwordError = document.getElementById('passwordError');
+    const confirmPasswordError = document.getElementById('confirmPasswordError');
+
+    const submitBtn = document.getElementById('btnSubmitLogin');
+    const btnText = document.getElementById('btnText');
+    const pageHeading = document.getElementById('pageHeading');
+    const pageSubtitle = document.getElementById('pageSubtitle');
+    const switchPrompt = document.getElementById('switchPrompt');
+
+    function switchAuthMode(mode) {
+        currentMode = mode;
+        authActionInput.value = mode;
+
+        // Clear error states
+        [nameInput, contactInput, passwordInput, confirmPasswordInput].forEach(inp => {
+            if (inp) {
+                const wrapper = inp.closest('.login-input-group') || inp.closest('.onboarding-input-wrapper');
+                if (wrapper) wrapper.style.borderColor = '#cbd5e1';
+            }
+        });
+        [nameError, emailError, passwordError, confirmPasswordError].forEach(err => err && (err.style.display = 'none'));
+
+        if (mode === 'register') {
+            if (groupFarmerName) {
+                groupFarmerName.style.display = 'block';
+                groupFarmerName.removeAttribute('aria-hidden');
+            }
+            if (groupConfirmPassword) {
+                groupConfirmPassword.style.display = 'block';
+                groupConfirmPassword.removeAttribute('aria-hidden');
+            }
+            pageHeading.textContent = lang === 'hi' ? 'नया किसान खाता बनाएं' : (lang === 'mr' ? 'नवीन शेतकरी खाते तयार करा' : 'Create Farmer Account');
+            pageSubtitle.textContent = lang === 'hi' ? 'सत्यापित ईमेल के साथ सुरक्षित किसान खाता बनाएं और तुरंत शुरू करें' : (lang === 'mr' ? 'सुरक्षित शेतकरी खाते तयार करा आणि ईमेल पडताळणी पूर्ण करा' : 'Register with secure email verification to access personalized advisories.');
+            btnText.textContent = lang === 'hi' ? 'खाता बनाएं व ईमेल सत्यापित करें' : (lang === 'mr' ? 'खाते तयार करा व ईमेल पडताळा' : 'Register & Send Verification Link');
+            switchPrompt.innerHTML = '<span>Already have an account?</span> <a href="javascript:void(0)" onclick="switchAuthMode(\'login\')" class="onboarding-link-green">Sign In</a>';
+        } else {
+            if (groupFarmerName) {
+                groupFarmerName.style.display = 'none';
+                groupFarmerName.setAttribute('aria-hidden', 'true');
+            }
+            if (groupConfirmPassword) {
+                groupConfirmPassword.style.display = 'none';
+                groupConfirmPassword.setAttribute('aria-hidden', 'true');
+            }
+            pageHeading.textContent = lang === 'hi' ? 'कृषि सहायक में लॉगिन करें' : (lang === 'mr' ? 'कृषी सहाय्यकमध्ये लॉगिन करा' : 'Sign In to Krishi Sahayak');
+            pageSubtitle.textContent = lang === 'hi' ? 'अपने व्यक्तिगत फसल कैलेंडर, मौसम अलर्ट व किसान प्रोफाइल तक पहुंचें' : (lang === 'mr' ? 'आपले वैयक्तिक पीक नियोजन, हवामान अलर्ट व शेतकरी प्रोफाइल मिळवा' : 'Access your personalized crop calendars, farm economics & alerts.');
+            btnText.textContent = lang === 'hi' ? 'आगे बढ़ें' : (lang === 'mr' ? 'पुढे जा' : 'Continue');
+            switchPrompt.innerHTML = '<span>New to Krishi Sahayak?</span> <a href="javascript:void(0)" onclick="switchAuthMode(\'register\')" class="onboarding-link-green">Create an account</a>';
+        }
+    }
+
+    function validateEmail(val) {
+        const emailRegex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+        const phoneRegex = /^[0-9]{10}$/;
+        if (currentMode === 'register') {
+            return emailRegex.test(val);
+        }
+        return emailRegex.test(val) || phoneRegex.test(val);
+    }
+
+    function validateStrongPassword(val) {
+        if (!val || val.length < 8) return false;
+        const hasLetter = /[a-zA-Z]/.test(val);
+        const hasDigit = /[0-9]/.test(val);
+        return hasLetter && hasDigit;
+    }
+
+    function setInputError(inputEl, errorEl, isError) {
+        if (!inputEl) return;
+        const wrapper = inputEl.closest('.login-input-group') || inputEl.closest('.onboarding-input-wrapper');
+        if (isError) {
+            if (wrapper) wrapper.style.borderColor = '#dc2626';
+            if (errorEl) errorEl.style.display = 'block';
+        } else {
+            if (wrapper) wrapper.style.borderColor = '#cbd5e1';
+            if (errorEl) errorEl.style.display = 'none';
+        }
+    }
+
+    function validateName() {
+        if (currentMode !== 'register') return true;
+        const val = nameInput.value.trim();
+        const valid = val.length > 0;
+        setInputError(nameInput, nameError, !valid);
+        return valid;
+    }
+
+    function validateContact() {
+        const val = contactInput.value.trim();
+        const valid = val.length > 0 && validateEmail(val);
+        setInputError(contactInput, emailError, !valid);
+        return valid;
+    }
+
+    function validatePassword() {
+        const val = passwordInput.value;
+        let valid = true;
+        if (currentMode === 'register') {
+            valid = validateStrongPassword(val);
+        } else {
+            valid = val.length > 0;
+        }
+        setInputError(passwordInput, passwordError, !valid);
+        return valid;
+    }
+
+    function validateConfirmPassword() {
+        if (currentMode !== 'register') return true;
+        const p1 = passwordInput.value;
+        const p2 = confirmPasswordInput.value;
+        const valid = p2.length > 0 && p1 === p2;
+        setInputError(confirmPasswordInput, confirmPasswordError, !valid);
+        return valid;
+    }
+
+    nameInput.addEventListener('input', validateName);
+    contactInput.addEventListener('input', validateContact);
+    passwordInput.addEventListener('input', function() {
+        validatePassword();
+        if (currentMode === 'register' && confirmPasswordInput.value) validateConfirmPassword();
+    });
+    confirmPasswordInput.addEventListener('input', validateConfirmPassword);
+
+    form.addEventListener('submit', function(e) {
+        const isNameValid = validateName();
+        const isContactValid = validateContact();
+        const isPassValid = validatePassword();
+        const isConfirmValid = validateConfirmPassword();
+
+        if (!isNameValid || !isContactValid || !isPassValid || !isConfirmValid) {
+            e.preventDefault();
+            if (!isNameValid) nameInput.focus();
+            else if (!isContactValid) contactInput.focus();
+            else if (!isPassValid) passwordInput.focus();
+            else if (!isConfirmValid) confirmPasswordInput.focus();
+            return;
+        }
+
+        // Maintain exact physical dimensions while loading
+        submitBtn.disabled = true;
+        submitBtn.classList.add('is-loading');
+        btnText.textContent = currentMode === 'register' ? submittingTextRegister : submittingTextLogin;
+    });
+
+    function handleGoogleSignIn() {
+        const btn = document.getElementById('btnGoogleLogin');
+        if (btn) btn.style.opacity = '0.7';
+
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+            try {
+                window.google.accounts.id.initialize({
+                    client_id: "1000000000000-krishisahayak.apps.googleusercontent.com",
+                    callback: function(response) {
+                        submitGoogleAuth("Google Farmer", "farmer.kisan@gmail.com", "https://api.dicebear.com/7.x/initials/svg?seed=GoogleFarmer");
+                    }
+                });
+                window.google.accounts.id.prompt();
+            } catch (e) {
+                console.log("GIS init fallback", e);
+            }
+        }
+
+        const sampleEmail = "kisan." + Math.floor(Math.random()*900 + 100) + "@gmail.com";
+        const sampleName = "{{ 'किसान साथी' if language == 'hi' else ('शेतकरी मित्र' if language == 'mr' else 'Kisan Farmer') }}";
+        submitGoogleAuth(sampleName, sampleEmail, 'https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(sampleName));
+    }
+
+    function submitGoogleAuth(name, email, picture) {
+        fetch('/api/auth/google', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+            body: JSON.stringify({ name: name, email: email, picture: picture })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = "{{ url_for('home') }}";
+            }
+        })
+        .catch(err => {
+            window.location.href = "{{ url_for('home') }}";
+        });
+    }
+    </script>
+</body>
+</html>

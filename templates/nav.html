@@ -1,0 +1,387 @@
+<a href="#mainContent" class="skip-link">Skip to main content</a>
+<header class="navbar-wrapper">
+    <div class="navbar page-content">
+        <!-- Brand Logo -->
+        <a class="logo" href="{{ url_for('home') }}">
+            <div class="logo-badge">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                    <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                </svg>
+            </div>
+            <div class="logo-text">
+                <span class="logo-title">{{ t.app_name }}</span>
+            </div>
+        </a>
+
+        <!-- Mobile Navigation Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks" type="button">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <!-- Navigation Links -->
+        <nav class="nav-links" id="navLinks">
+            <a href="{{ url_for('home') }}" class="nav-item {{ 'active' if active_page == 'home' else '' }}">
+                <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span>{{ t.nav_home }}</span>
+            </a>
+
+            <a href="{{ url_for('weather') }}" class="nav-item {{ 'active' if active_page == 'weather' else '' }}">
+                <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                </svg>
+                <span>{{ t.nav_weather }}</span>
+            </a>
+
+            <a href="{{ url_for('crops') }}" class="nav-item {{ 'active' if active_page == 'crops' else '' }}">
+                <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 20h10"/>
+                    <path d="M10 20c5.5-2.5.8-6.4 3-10"/>
+                    <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8Z"/>
+                </svg>
+                <span>{{ t.nav_crops }}</span>
+            </a>
+
+            <a href="{{ url_for('calendar') }}" class="nav-item {{ 'active' if active_page == 'calendar' else '' }}">
+                <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                    <line x1="16" x2="16" y1="2" y2="6"/>
+                    <line x1="8" x2="8" y1="2" y2="6"/>
+                    <line x1="3" x2="21" y1="10" y2="10"/>
+                </svg>
+                <span>{{ t.nav_calendar }}</span>
+            </a>
+
+            <a href="{{ url_for('disease') }}" class="nav-item {{ 'active' if active_page == 'disease' else '' }}">
+                <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" x2="12" y1="8" y2="16"/>
+                    <line x1="8" x2="16" y1="12" y2="12"/>
+                </svg>
+                <span>{{ t.nav_disease }}</span>
+            </a>
+
+            <!-- Consolidated Secondary Agronomy & Advisory Tools Dropdown -->
+            <div class="nav-dropdown" id="toolsDropdown">
+                <button class="nav-item nav-dropdown-btn {{ 'active' if active_page in ['soil', 'practices', 'services', 'schemes', 'reminders'] else '' }}" type="button" aria-haspopup="true" aria-expanded="false" id="toolsDropdownBtn">
+                    <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="7" height="7" x="3" y="3" rx="1"/>
+                        <rect width="7" height="7" x="14" y="3" rx="1"/>
+                        <rect width="7" height="7" x="14" y="14" rx="1"/>
+                        <rect width="7" height="7" x="3" y="14" rx="1"/>
+                    </svg>
+                    <span>{{ t.nav_services if t.nav_services else 'Services' }} &amp; {{ t.nav_schemes if t.nav_schemes else 'Tools' }}</span>
+                    <svg class="lang-caret-svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                    {% if pending_reminders_count and pending_reminders_count > 0 %}
+                    <span class="nav-badge-count">{{ pending_reminders_count }}</span>
+                    {% endif %}
+                </button>
+                <div class="nav-dropdown-menu" id="toolsMenu">
+                    <a href="{{ url_for('soil') }}" class="nav-dropdown-item {{ 'active' if active_page == 'soil' else '' }}">
+                        <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 2v7.31"/>
+                            <path d="M14 9.3V1.99"/>
+                            <path d="M8.5 2h7"/>
+                            <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/>
+                        </svg>
+                        <span>{{ t.nav_soil }}</span>
+                    </a>
+                    <a href="{{ url_for('practices') }}" class="nav-dropdown-item {{ 'active' if active_page == 'practices' else '' }}">
+                        <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <path d="m9 12 2 2 4-4"/>
+                        </svg>
+                        <span>{{ t.nav_practices }}</span>
+                    </a>
+                    <a href="{{ url_for('services') }}" class="nav-dropdown-item {{ 'active' if active_page == 'services' else '' }}">
+                        <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 21h18"/>
+                            <path d="M3 10h18"/>
+                            <path d="M5 6l7-3 7 3"/>
+                            <path d="M4 10v11"/>
+                            <path d="M20 10v11"/>
+                        </svg>
+                        <span>{{ t.nav_services }}</span>
+                    </a>
+                    <a href="{{ url_for('schemes') }}" class="nav-dropdown-item {{ 'active' if active_page == 'schemes' else '' }}">
+                        <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                        <span>{{ t.nav_schemes if t.nav_schemes else 'Schemes' }}</span>
+                    </a>
+                    <a href="{{ url_for('reminders') }}" class="nav-dropdown-item {{ 'active' if active_page == 'reminders' else '' }}">
+                        <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                        </svg>
+                        <span>{{ t.nav_reminders if t.nav_reminders else 'Reminders' }}</span>
+                        {% if pending_reminders_count and pending_reminders_count > 0 %}
+                        <span class="nav-badge-count ms-auto">{{ pending_reminders_count }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+
+            <a href="{{ url_for('voice') }}" class="nav-item nav-voice-highlight {{ 'active' if active_page == 'voice' else '' }}">
+                <svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" x2="12" y1="19" y2="22"/>
+                </svg>
+                <span>{{ t.nav_voice }}</span>
+            </a>
+
+            <!-- Language Dropdown -->
+            <div class="lang-dropdown">
+                <button class="lang-btn" type="button" aria-haspopup="true" aria-expanded="false" id="langDropdownBtn">
+                    <svg class="lang-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" x2="22" y1="12" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                    <span class="lang-current">{{ languages[language] }}</span>
+                    <svg class="lang-caret-svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>
+                <div class="lang-menu" id="langMenu">
+                    <a href="{{ url_for('set_language', lang_code='en') }}" class="lang-option {{ 'selected' if language == 'en' else '' }}">
+                        <span class="lang-code-tag">EN</span>
+                        <span>English</span>
+                    </a>
+                    <a href="{{ url_for('set_language', lang_code='hi') }}" class="lang-option {{ 'selected' if language == 'hi' else '' }}">
+                        <span class="lang-code-tag">HI</span>
+                        <span>हिन्दी (Hindi)</span>
+                    </a>
+                    <a href="{{ url_for('set_language', lang_code='mr') }}" class="lang-option {{ 'selected' if language == 'mr' else '' }}">
+                        <span class="lang-code-tag">MR</span>
+                        <span>मराठी (Marathi)</span>
+                    </a>
+                    <div class="lang-divider"></div>
+                    <a href="{{ url_for('language_select') }}" class="lang-option lang-manage">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                        <span>{{ t.change_language }}</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- User Auth Dropdown / Sign In Button -->
+            <div class="user-auth-wrap ms-1">
+                {% if user %}
+                <!-- User Profile Dropdown -->
+                <div class="user-profile-dropdown" id="userProfileDropdown">
+                    <button class="user-profile-badge {{ 'active' if active_page == 'profile' else '' }}" type="button" id="userProfileBtn" aria-haspopup="true" aria-expanded="false">
+                        <img src="{{ user.picture }}" alt="{{ user.name }}" class="user-avatar-img">
+                        <span class="user-name-text">{{ user.name.split(' ')[0] }}</span>
+                        <svg class="lang-caret-svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+                    <div class="user-profile-menu" id="userProfileMenu">
+                        <div class="user-menu-header">
+                            <img src="{{ user.picture }}" alt="{{ user.name }}" class="user-menu-avatar">
+                            <div>
+                                <p class="user-menu-name">{{ user.name }}</p>
+                                <p class="user-menu-email">{{ user.email }}</p>
+                            </div>
+                        </div>
+                        <div class="lang-divider"></div>
+                        <a href="{{ url_for('profile') }}" class="user-menu-item">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            <span>{% if language == 'hi' %}प्रोफाइल{% elif language == 'mr' %}प्रोफाइल{% else %}My Profile{% endif %}</span>
+                        </a>
+                        <a href="{{ url_for('reminders') }}" class="user-menu-item">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+                                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                            </svg>
+                            <span>{{ t.nav_reminders if t.nav_reminders else 'Reminders' }}</span>
+                        </a>
+                        <div class="lang-divider"></div>
+                        <a href="{{ url_for('logout') }}" class="user-menu-item user-menu-logout">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" x2="9" y1="12" y2="12"/>
+                            </svg>
+                            <span>{% if language == 'hi' %}लॉगआउट{% elif language == 'mr' %}लॉगआउट{% else %}Sign Out{% endif %}</span>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn-auth-signin {{ 'active' if active_page == 'login' else '' }}">
+                    <svg width="14" height="14" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.29 21.37 7.37 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.28 14.27a7.15 7.15 0 0 1 0-4.54V6.58H1.26a11.98 11.98 0 0 0 0 10.84l4.02-3.15z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.29 2.63 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.93 6.72-4.93z"/>
+                    </svg>
+                    <span>{% if language == 'hi' %}लॉगिन{% elif language == 'mr' %}लॉगिन{% else %}Sign In{% endif %}</span>
+                </a>
+                {% endif %}
+            </div>
+        </nav>
+    </div>
+</header>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Global Navbar Hide/Show on Scroll (12px threshold to prevent flicker)
+        const navbarWrapper = document.querySelector('.navbar-wrapper');
+        let lastScrollY = window.pageYOffset || document.documentElement.scrollTop;
+        let scrollDelta = 0;
+        const scrollThreshold = 12; // 10-15px threshold
+
+        window.addEventListener('scroll', function() {
+            const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+            // Always show navbar near top of page (within 20px)
+            if (currentScrollY <= 20) {
+                if (navbarWrapper) navbarWrapper.classList.remove('nav-hidden');
+                lastScrollY = currentScrollY;
+                scrollDelta = 0;
+                return;
+            }
+
+            const diff = currentScrollY - lastScrollY;
+
+            // Track scroll direction change
+            if ((diff > 0 && scrollDelta < 0) || (diff < 0 && scrollDelta > 0)) {
+                scrollDelta = diff;
+            } else {
+                scrollDelta += diff;
+            }
+
+            if (scrollDelta > scrollThreshold) {
+                // Scrolling down past threshold -> hide navbar
+                if (navbarWrapper) navbarWrapper.classList.add('nav-hidden');
+            } else if (scrollDelta < -scrollThreshold) {
+                // Scrolling up past threshold -> reveal navbar
+                if (navbarWrapper) navbarWrapper.classList.remove('nav-hidden');
+            }
+
+            lastScrollY = currentScrollY;
+        }, { passive: true });
+
+        // Mobile navigation toggle
+        const toggle = document.getElementById('mobileMenuToggle');
+        const nav = document.getElementById('navLinks');
+        if (toggle && nav) {
+            toggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = nav.classList.toggle('open');
+                toggle.classList.toggle('open');
+                toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        }
+
+        // Language dropdown toggle
+        const langBtn = document.getElementById('langDropdownBtn');
+        const langMenu = document.getElementById('langMenu');
+        if (langBtn && langMenu) {
+            langBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = langMenu.classList.contains('show');
+                // Close user menu if open
+                if (typeof userProfileMenu !== 'undefined' && userProfileMenu) userProfileMenu.classList.remove('show');
+                langMenu.classList.toggle('show', !isOpen);
+                langBtn.setAttribute('aria-expanded', (!isOpen).toString());
+            });
+        }
+
+        // User Profile dropdown toggle
+        const userProfileBtn = document.getElementById('userProfileBtn');
+        const userProfileMenu = document.getElementById('userProfileMenu');
+        if (userProfileBtn && userProfileMenu) {
+            userProfileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = userProfileMenu.classList.contains('show');
+                // Close lang menu if open
+                if (langMenu) langMenu.classList.remove('show');
+                userProfileMenu.classList.toggle('show', !isOpen);
+                userProfileBtn.setAttribute('aria-expanded', (!isOpen).toString());
+            });
+        }
+
+        // Tools dropdown toggle
+        const toolsBtn = document.getElementById('toolsDropdownBtn');
+        const toolsMenu = document.getElementById('toolsMenu');
+        if (toolsBtn && toolsMenu) {
+            toolsBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = toolsMenu.classList.contains('show');
+                if (langMenu) langMenu.classList.remove('show');
+                if (typeof userProfileMenu !== 'undefined' && userProfileMenu) userProfileMenu.classList.remove('show');
+                toolsMenu.classList.toggle('show', !isOpen);
+                toolsBtn.setAttribute('aria-expanded', (!isOpen).toString());
+            });
+        }
+
+        // Close all dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (toolsBtn && toolsMenu && !toolsBtn.contains(e.target) && !toolsMenu.contains(e.target)) {
+                toolsMenu.classList.remove('show');
+                toolsBtn.setAttribute('aria-expanded', 'false');
+            }
+            if (langBtn && langMenu && !langBtn.contains(e.target) && !langMenu.contains(e.target)) {
+                langMenu.classList.remove('show');
+                langBtn.setAttribute('aria-expanded', 'false');
+            }
+            if (userProfileBtn && userProfileMenu && !userProfileBtn.contains(e.target) && !userProfileMenu.contains(e.target)) {
+                userProfileMenu.classList.remove('show');
+                userProfileBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Close dropdowns on Escape key press and return focus to trigger
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (toolsBtn && toolsMenu && toolsMenu.classList.contains('show')) {
+                    toolsMenu.classList.remove('show');
+                    toolsBtn.setAttribute('aria-expanded', 'false');
+                    toolsBtn.focus();
+                }
+                if (langBtn && langMenu && langMenu.classList.contains('show')) {
+                    langMenu.classList.remove('show');
+                    langBtn.setAttribute('aria-expanded', 'false');
+                    langBtn.focus();
+                }
+                if (userProfileBtn && userProfileMenu && userProfileMenu.classList.contains('show')) {
+                    userProfileMenu.classList.remove('show');
+                    userProfileBtn.setAttribute('aria-expanded', 'false');
+                    userProfileBtn.focus();
+                }
+            }
+        });
+    });
+</script>
+
+<script>
+    /* Navbar scroll-depth darkening effect */
+    (function() {
+        var navbar = document.querySelector('.navbar-wrapper');
+        if (!navbar) return;
+        function onScroll() {
+            if (window.scrollY > 10) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll(); // run on load
+    })();
+</script>

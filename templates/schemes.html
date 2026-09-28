@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.schemes_page_title }} - {{ t.app_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260917_v3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    {% include "nav.html" %}
+
+    <main id="mainContent" class="page-content tool-page">
+        <!-- Page Header -->
+        <header class="page-header">
+            <div class="eyebrow-pill">
+                <span class="pulse-dot"></span>
+                <span>{{ t.schemes_page_eyebrow }}</span>
+            </div>
+            <h1>{{ t.schemes_page_title }}</h1>
+            <p>{{ t.schemes_page_subtitle }}</p>
+        </header>
+
+        <!-- Category Filter Chips -->
+        <div class="filter-chips-row justify-content-center mb-3" id="categoryChips">
+            <button type="button" class="filter-chip-btn active" onclick="setCategoryFilter('all', this)">All Schemes</button>
+            <button type="button" class="filter-chip-btn" onclick="setCategoryFilter('financial', this)">💰 Financial Support</button>
+            <button type="button" class="filter-chip-btn" onclick="setCategoryFilter('insurance', this)">🌾 Crop Insurance</button>
+            <button type="button" class="filter-chip-btn" onclick="setCategoryFilter('irrigation', this)">💧 Irrigation</button>
+            <button type="button" class="filter-chip-btn" onclick="setCategoryFilter('equipment', this)">🚜 Equipment Subsidy</button>
+            <button type="button" class="filter-chip-btn" onclick="setCategoryFilter('govt', this)">🏛️ Government</button>
+        </div>
+
+        <!-- Search Bar for Schemes -->
+        <div class="schemes-search-bar-wrap mb-4">
+            <div class="search-input-group">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="schemeSearchInput" class="form-input search-input-with-icon" placeholder="{{ t.search_schemes_placeholder }}" onkeyup="filterSchemes()">
+            </div>
+        </div>
+
+        <!-- Schemes Grid -->
+        <div class="schemes-grid" id="schemesGrid">
+            {% for s in government_schemes %}
+            <article class="scheme-card" data-category="{{ 'financial' if s.id in ['pm_kisan', 'kcc_credit'] or 'kisan' in s.id or 'dbt' in s.id else ('insurance' if s.id == 'pmfby' or 'insurance' in s.id or 'bima' in s.id else ('irrigation' if s.id in ['pmksy', 'pm_kusum'] or 'drip' in s.id or 'irrigation' in s.id else ('equipment' if s.id == 'smam_machinery' or 'machinery' in s.id or 'tractor' in s.id else 'govt'))) }}" data-search-text="{{ s.name[language] if language in s.name else s.name.en }} {{ s.benefit[language] if language in s.benefit else s.benefit.en }} {{ s.subsidy }}">
+                <div class="scheme-card-header">
+                    <div class="scheme-icon-box">🏛️</div>
+                    <div>
+                        <h3 class="scheme-title">
+                            {{ s.name[language] if language in s.name else s.name.en }}
+                        </h3>
+                        <span class="scheme-subsidy-badge">
+                            {{ s.subsidy }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="scheme-body">
+                    <div class="scheme-section">
+                        <strong class="scheme-section-label">💡 {{ t.scheme_subsidy_label }}:</strong>
+                        <p class="scheme-section-text">
+                            {{ s.benefit[language] if language in s.benefit else s.benefit.en }}
+                        </p>
+                    </div>
+
+                    <div class="scheme-section">
+                        <strong class="scheme-section-label">📋 {{ t.scheme_eligibility_label }}:</strong>
+                        <p class="scheme-section-text">
+                            {{ s.eligibility[language] if language in s.eligibility else s.eligibility.en }}
+                        </p>
+                    </div>
+                </div>
+
+                <button type="button" class="details-accordion-btn mt-2 mb-2" onclick="toggleSchemeDetails('details-{{ loop.index }}', this)" aria-expanded="false" aria-controls="details-{{ loop.index }}">
+                    <span>More Details & Helpline ↓</span>
+                </button>
+                <div class="details-accordion-content" id="details-{{ loop.index }}">
+                    <p class="small text-secondary mb-1"><strong>Helpline Contact:</strong> {{ s.helpline }}</p>
+                    <p class="small text-muted mb-0">Official Scheme Code: <code>{{ s.id }}</code></p>
+                </div>
+
+                <div class="scheme-footer mt-3">
+                    <a href="{{ s.portal_url }}" target="_blank" rel="noopener noreferrer" class="button primary full-width scheme-link-btn">
+                        <span>{{ t.scheme_portal_link }} ↗</span>
+                    </a>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div class="page-content footer-inner">
+            <p>© 2026 <strong>{{ t.app_name }}</strong> · {{ t.app_tagline }}</p>
+            <div class="footer-lang-links">
+                <a href="{{ url_for('set_language', lang_code='en') }}">English</a> ·
+                <a href="{{ url_for('set_language', lang_code='hi') }}">हिन्दी</a> ·
+                <a href="{{ url_for('set_language', lang_code='mr') }}">मराठी</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    let activeCategory = 'all';
+
+    function setCategoryFilter(cat, btn) {
+        activeCategory = cat;
+        document.querySelectorAll('#categoryChips .filter-chip-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        filterSchemes();
+    }
+
+    function filterSchemes() {
+        const queryInput = document.getElementById('schemeSearchInput');
+        const query = queryInput ? queryInput.value.toLowerCase().trim() : '';
+        const cards = document.querySelectorAll('.scheme-card');
+
+        cards.forEach(card => {
+            const text = card.getAttribute('data-search-text').toLowerCase();
+            const cat = card.getAttribute('data-category');
+
+            const matchesSearch = !query || text.includes(query);
+            const matchesCat = activeCategory === 'all' || cat === activeCategory;
+
+            if (matchesSearch && matchesCat) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function toggleSchemeDetails(id, btn) {
+        const el = document.getElementById(id);
+        if (el) {
+            const isOpen = el.classList.toggle('show');
+            if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+    }
+    </script>
+</body>
+</html>
+
