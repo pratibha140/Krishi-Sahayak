@@ -209,6 +209,40 @@ def save_user(email, name, picture=None, auth_type="email", language="en", state
     return dict(user) if user else None
 
 
+def get_user_by_id(user_id):
+    if not user_id:
+        return None
+    conn = get_db_connection()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return dict(user) if user else None
+
+
+def update_user_profile(user_id, name, state=None, district=None, land_size=None, primary_crop=None, soil_type=None):
+    """
+    Safely updates a user's profile information by their immutable user ID.
+    Email cannot be modified via this function to prevent IDOR / Account Takeover.
+    """
+    if not user_id:
+        return None
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE users SET
+            name = ?,
+            state = COALESCE(?, state),
+            district = COALESCE(?, district),
+            land_size = COALESCE(?, land_size),
+            primary_crop = COALESCE(?, primary_crop),
+            soil_type = COALESCE(?, soil_type)
+        WHERE id = ?
+    """, (name, state, district, land_size, primary_crop, soil_type, user_id))
+    conn.commit()
+    user = cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return dict(user) if user else None
+
+
 def update_user_language(email, language):
     if not email:
         return

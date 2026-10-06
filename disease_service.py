@@ -5,7 +5,8 @@
 
 import io
 import re
-from functools import lru_cache
+import threading
+import time
 
 import numpy as np
 import torch
@@ -13,18 +14,75 @@ from PIL import Image
 
 MODEL_NAME = "linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
 
+# P1-2: Thread synchronization lock and singleton cache to prevent worker starvation and concurrent duplicate loads
+_MODEL_LOCK = threading.Lock()
+_CACHED_MODEL = None
+_MODEL_LOAD_ATTEMPTED = False
+_LAST_FAILURE_TIME = None
+_FAILURE_COOLDOWN_SECONDS = 30
 
-@lru_cache(maxsize=1)
+
+def clear_model_cache():
+    """Reset cached model state (primarily for automated testing)."""
+    global _CACHED_MODEL, _MODEL_LOAD_ATTEMPTED, _LAST_FAILURE_TIME
+    with _MODEL_LOCK:
+        _CACHED_MODEL = None
+        _MODEL_LOAD_ATTEMPTED = False
+        _LAST_FAILURE_TIME = None
+
+
+def is_model_loaded():
+    """Check whether the model is currently loaded in memory."""
+    return _CACHED_MODEL is not None
+
+
 def _load_plant_disease_model():
-    """Load and cache the verified Hugging Face image classification model."""
-    try:
-        from transformers import AutoModelForImageClassification
+    """
+    Safely load and cache the verified plant disease model with concurrency protection.
+    Uses double-checked locking to guarantee exactly one load attempt per worker process,
+    preventing concurrent worker starvation and cold-start DoS.
+    """
+    global _CACHED_MODEL, _MODEL_LOAD_ATTEMPTED, _LAST_FAILURE_TIME
 
-        model = AutoModelForImageClassification.from_pretrained(MODEL_NAME)
-        model.eval()
-        return model
-    except Exception:
-        return None
+    # Fast-path: return cached instance without acquiring lock
+    if _CACHED_MODEL is not None:
+        return _CACHED_MODEL
+
+    with _MODEL_LOCK:
+        # Double-check inside lock
+        if _CACHED_MODEL is not None:
+            return _CACHED_MODEL
+
+        # Cooldown guard: if a previous initialization failed recently, fail fast
+        # to avoid repeated 30-second worker stalls on every incoming request
+        now = time.time()
+        if _LAST_FAILURE_TIME is not None and (now - _LAST_FAILURE_TIME) < _FAILURE_COOLDOWN_SECONDS:
+            return None
+
+        _MODEL_LOAD_ATTEMPTED = True
+
+        try:
+            from transformers import AutoModelForImageClassification
+
+            # Attempt 1: Fast local cache loading (avoids remote hub latency and unauthenticated warnings)
+            try:
+                model = AutoModelForImageClassification.from_pretrained(
+                    MODEL_NAME, local_files_only=True
+                )
+            except (OSError, EnvironmentError):
+                # Attempt 2: Download/verify from Hugging Face Hub if not cached locally
+                model = AutoModelForImageClassification.from_pretrained(MODEL_NAME)
+
+            model.eval()
+            _CACHED_MODEL = model
+            _LAST_FAILURE_TIME = None
+            return _CACHED_MODEL
+        except Exception as e:
+            _LAST_FAILURE_TIME = time.time()
+            _CACHED_MODEL = None
+            # Log safely without crashing the worker or exposing internal traceback to users
+            print(f"[SECURITY] ML plant disease model initialization failed: {type(e).__name__}", flush=True)
+            return None
 
 
 def _normalize_text(value):

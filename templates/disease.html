@@ -61,7 +61,7 @@
             <section class="disease-tools-column">
                 <!-- Photo Upload Zone -->
                 <div class="upload-zone-card">
-                    <input type="file" id="leafPhotoInput" accept="image/*" style="display: none;">
+                    <input type="file" id="leafPhotoInput" accept="image/*" style="display: none;" aria-label="{{ t.choose_photo_btn }}">
                     
                     <div class="upload-inner" id="dropArea" onclick="if (document.getElementById('uploadPlaceholder').style.display !== 'none') document.getElementById('leafPhotoInput').click()">
                         <div class="upload-preview-container" id="previewContainer" style="display: none;" onclick="event.stopPropagation()">
@@ -131,7 +131,7 @@
                     <form method="get" action="{{ url_for('disease') }}" class="disease-search-form">
                         <div class="form-row-2">
                             <div class="form-group">
-                                <label>{{ t.filter_by_crop }}</label>
+                                <label for="cropFilterSelect">{{ t.filter_by_crop }}</label>
                                 <select name="crop" id="cropFilterSelect" class="form-input" onchange="this.form.submit()">
                                     <option value="all" {% if selected_crop == 'all' %}selected{% endif %}>{{ t.all_crops }}</option>
                                     {% for c_id, c_info in all_crops.items() %}
@@ -139,13 +139,13 @@
                                         {{ c_info.names[language] if language in c_info.names else c_info.names.en }}
                                     </option>
                                     {% endfor %}
-                                </select>
+                                 </select>
                             </div>
 
                             <div class="form-group">
-                                <label>{{ t.symptoms_heading }}</label>
+                                <label for="diseaseSearchInput">{{ t.symptoms_heading }}</label>
                                 <div class="search-input-group">
-                                    <input type="text" name="q" value="{{ search_query }}" placeholder="{{ t.search_disease_placeholder }}" class="form-input">
+                                    <input type="text" id="diseaseSearchInput" name="q" value="{{ search_query }}" placeholder="{{ t.search_disease_placeholder }}" aria-label="{{ t.search_disease_placeholder }}" class="form-input">
                                     <button type="submit" class="button primary">{{ t.search_btn }}</button>
                                 </div>
                             </div>
@@ -316,6 +316,7 @@
                 if (scanLine) scanLine.style.display = 'block';
                 if (loader) loader.style.display = 'block';
                 if (resultBox) resultBox.style.display = 'none';
+                btnConfirmScan.disabled = true;
 
                 // Prepare FormData
                 const formData = new FormData();
@@ -324,17 +325,31 @@
                 const cropSelect = document.getElementById('cropFilterSelect');
                 if (cropSelect) formData.append('crop', cropSelect.value);
 
+                // Safe text escaping helper for error messages
+                function escapeText(str) {
+                    const div = document.createElement('div');
+                    div.textContent = str || '';
+                    return div.innerHTML;
+                }
+
+                // Setup 25s timeout via AbortController
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 25000);
+
                 // Send API Request
                 fetch('/api/diagnose-disease', {
                     method: 'POST',
                     headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 })
-                .then(r => r.json())
+                .then(r => {
+                    if (!r.ok) {
+                        return r.json().catch(() => ({ success: false, error: 'Server error (' + r.status + ')' }));
+                    }
+                    return r.json();
+                })
                 .then(data => {
-                    loader.style.display = 'none';
-                    if (scanLine) scanLine.style.display = 'none';
-
                     if (data.success && data.disease) {
                         const dis = data.disease;
                         const conf = data.confidence || 85;
@@ -362,11 +377,11 @@
                             resultBox.innerHTML = `
                                 <article class="disease-diagnosis-card photo-match-highlight">
                                     <div class="diagnosis-badge-banner d-flex align-items-center justify-content-between mb-2">
-                                        <span class="crop-badge">${dis.crop_name}</span>
+                                        <span class="crop-badge">${escapeText(dis.crop_name)}</span>
                                         <span class="badge bg-success text-white fw-bold px-3 py-1">AI Health Check</span>
                                     </div>
-                                    <h3 class="disease-name mt-1 mb-0">${dis.name}</h3>
-                                    <p class="pathogen-text small text-muted mb-2"><i>Pathogen: ${dis.pathogen}</i></p>
+                                    <h3 class="disease-name mt-1 mb-0">${escapeText(dis.name)}</h3>
+                                    <p class="pathogen-text small text-muted mb-2"><i>Pathogen: ${escapeText(dis.pathogen)}</i></p>
 
                                     <div class="mb-3">
                                         <div class="d-flex justify-content-between small fw-bold mb-1">
@@ -382,15 +397,15 @@
                                         <h4 class="fw-bold text-success fs-6 mb-3">⚡ WHAT TO DO NOW (Immediate Action Steps)</h4>
                                         <div class="action-checklist-item">
                                             <span class="action-check-icon">1</span>
-                                            <div><strong>Organic Solution:</strong> ${dis.organic_remedy}</div>
+                                            <div><strong>Organic Solution:</strong> ${escapeText(dis.organic_remedy)}</div>
                                         </div>
                                         <div class="action-checklist-item">
                                             <span class="action-check-icon">2</span>
-                                            <div><strong>Chemical Spray:</strong> ${dis.chemical_remedy}</div>
+                                            <div><strong>Chemical Spray:</strong> ${escapeText(dis.chemical_remedy)}</div>
                                         </div>
                                         <div class="action-checklist-item">
                                             <span class="action-check-icon">3</span>
-                                            <div><strong>Prevention:</strong> ${dis.prevention}</div>
+                                            <div><strong>Prevention:</strong> ${escapeText(dis.prevention)}</div>
                                         </div>
                                     </div>
 
@@ -398,20 +413,58 @@
                                         <span>Learn More About Disease & Symptoms ↓</span>
                                     </button>
                                     <div class="details-accordion-content" id="diagDetailsAcc">
-                                        <p class="small text-secondary mb-0"><strong>Symptoms:</strong> ${dis.symptoms}</p>
+                                        <p class="small text-secondary mb-0"><strong>Symptoms:</strong> ${escapeText(dis.symptoms)}</p>
                                     </div>
                                 </article>
                             `;
                         }
                         resultBox.style.display = 'block';
                         resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        // Server returned failure
+                        const errorMsg = data.error || "Unable to diagnose the leaf photo. Please try a clearer picture.";
+                        resultBox.innerHTML = `
+                            <div class="card p-4 border-danger bg-light text-center">
+                                <div class="badge bg-danger text-white fs-6 p-2 mb-2">⚠️ Diagnosis Notice</div>
+                                <h3 class="fw-bold mb-2">Could Not Complete Diagnosis</h3>
+                                <p class="text-secondary small mb-3">${escapeText(errorMsg)}</p>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button class="button primary" onclick="resetPhotoSelection();">
+                                        <span>Upload New Photo</span>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        resultBox.style.display = 'block';
+                        if (scanConfirmActions) scanConfirmActions.style.display = 'flex';
                     }
                 })
                 .catch(err => {
-                    loader.style.display = 'none';
-                    if (scanLine) scanLine.style.display = 'none';
+                    const isTimeout = err && err.name === 'AbortError';
+                    const errorMsg = isTimeout
+                        ? "Diagnosis timed out. The server is taking longer than expected. Please check your connection and retry."
+                        : "Network error occurred while uploading. Please check your connection and retry.";
+                    resultBox.innerHTML = `
+                        <div class="card p-4 border-danger bg-light text-center">
+                            <div class="badge bg-danger text-white fs-6 p-2 mb-2">⚠️ ${isTimeout ? 'Timeout' : 'Network Error'}</div>
+                            <h3 class="fw-bold mb-2">${isTimeout ? 'Request Timed Out' : 'Connection Error'}</h3>
+                            <p class="text-secondary small mb-3">${escapeText(errorMsg)}</p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <button class="button primary" onclick="resetPhotoSelection();">
+                                    <span>Try Again</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    resultBox.style.display = 'block';
                     if (scanConfirmActions) scanConfirmActions.style.display = 'flex';
                     console.error("Diagnosis error:", err);
+                })
+                .finally(() => {
+                    clearTimeout(timeoutId);
+                    if (loader) loader.style.display = 'none';
+                    if (scanLine) scanLine.style.display = 'none';
+                    btnConfirmScan.disabled = false;
                 });
             });
         }

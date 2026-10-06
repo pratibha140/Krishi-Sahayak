@@ -2324,8 +2324,732 @@ print(f"HAS_NAME={{'Persistent Farmer' in res.get_data(as_text=True)}}")
         self.assertIn('CRITICAL SECURITY ERROR: SECRET_KEY must be set in production environment!', proc.stderr)
 
 
+class ProfileIdorSecurityTestCase(unittest.TestCase):
+    def setUp(self):
+        app.config['TESTING'] = True
+        app.config['SECRET_KEY'] = 'test-secret-key-p02'
+        clear_rate_limits()
+        self.client = app.test_client()
+
+        self.uid = secrets.token_hex(4)
+        self.user_a_email = f"user_a_{self.uid}@example.com"
+        self.user_b_email = f"user_b_{self.uid}@example.com"
+
+        self.db_user_a = database.create_user_with_password(
+            email=self.user_a_email,
+            name=f"User A {self.uid}",
+            password_hash=generate_password_hash("PasswordA123!"),
+            is_verified=1,
+            language="en"
+        )
+        self.db_user_b = database.create_user_with_password(
+            email=self.user_b_email,
+            name=f"User B {self.uid} Original",
+            password_hash=generate_password_hash("PasswordB123!"),
+            is_verified=1,
+            language="en"
+        )
+
+    def tearDown(self):
+        conn = database.get_db_connection()
+        conn.execute("DELETE FROM users WHERE id IN (?, ?)", (self.db_user_a["id"], self.db_user_b["id"]))
+        conn.commit()
+        conn.close()
+
+    def test_p02_normal_own_profile_update(self):
+        """P0-2 Test 1: Authenticated user updates their own profile normally."""
+        with self.client.session_transaction() as sess:
+            sess["user"] = self.db_user_a
+            sess["language"] = "en"
+
+        res = self.client.post("/profile", data={
+            "name": f"User A {self.uid} Updated",
+            "email": self.user_a_email,
+            "state": "Punjab",
+            "district": "Amritsar",
+            "land_size": "5.0",
+            "primary_crop": "rice",
+            "soil_type": "Alluvial Soil"
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+
+        refreshed_a = database.get_user_by_id(self.db_user_a["id"])
+        self.assertEqual(refreshed_a["name"], f"User A {self.uid} Updated")
+        self.assertEqual(refreshed_a["state"], "Punjab")
+        self.assertEqual(refreshed_a["primary_crop"], "rice")
+
+        refreshed_b = database.get_user_by_id(self.db_user_b["id"])
+        self.assertEqual(refreshed_b["name"], f"User B {self.uid} Original")
+
+        with self.client.session_transaction() as sess:
+            self.assertEqual(sess["user"]["id"], self.db_user_a["id"])
+
+    def test_p02_attempt_to_use_another_user_email_prevented(self):
+        """P0-2 Test 2: Submitting another user's email does not modify target user or switch session."""
+        with self.client.session_transaction() as sess:
+            sess["user"] = self.db_user_a
+            sess["language"] = "en"
+
+        res = self.client.post("/profile", data={
+            "name": "Attacker Hijacked Name",
+            "email": self.user_b_email,
+            "state": "Hacked State"
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+
+        # User B must remain completely unmodified
+        refreshed_b = database.get_user_by_id(self.db_user_b["id"])
+        self.assertEqual(refreshed_b["name"], f"User B {self.uid} Original")
+        self.assertNotEqual(refreshed_b["name"], "Attacker Hijacked Name")
+
+        # User A's email must remain their own
+        refreshed_a = database.get_user_by_id(self.db_user_a["id"])
+        self.assertEqual(refreshed_a["email"], self.user_a_email)
+
+        # Session must remain bound to User A
+        with self.client.session_transaction() as sess:
+            self.assertEqual(sess["user"]["id"], self.db_user_a["id"])
+            self.assertEqual(sess["user"]["email"], self.user_a_email)
+
+    def test_p02_email_omitted_from_post(self):
+        """P0-2 Test 3: Submitting profile update without email field succeeds safely."""
+        with self.client.session_transaction() as sess:
+            sess["user"] = self.db_user_a
+            sess["language"] = "en"
+
+        res = self.client.post("/profile", data={
+            "name": f"User A {self.uid} No Email",
+            "state": "Haryana",
+            "district": "Karnal"
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+
+        refreshed_a = database.get_user_by_id(self.db_user_a["id"])
+        self.assertEqual(refreshed_a["name"], f"User A {self.uid} No Email")
+        self.assertEqual(refreshed_a["email"], self.user_a_email)
+
+    def test_p02_same_email_submitted(self):
+        """P0-2 Test 4: Submitting same email updates profile cleanly."""
+        with self.client.session_transaction() as sess:
+            sess["user"] = self.db_user_a
+            sess["language"] = "en"
+
+        res = self.client.post("/profile", data={
+            "name": f"User A {self.uid} Same Email",
+            "email": self.user_a_email,
+            "district": "Patiala"
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+
+        refreshed_a = database.get_user_by_id(self.db_user_a["id"])
+        self.assertEqual(refreshed_a["name"], f"User A {self.uid} Same Email")
+        self.assertEqual(refreshed_a["email"], self.user_a_email)
+
+
+class ProductionEmailVerificationSecurityTestCase(unittest.TestCase):
+    def setUp(self):
+        app.config['TESTING'] = True
+        app.config['SECRET_KEY'] = 'test-secret-key-p11'
+        clear_rate_limits()
+        self.client = app.test_client()
+        self.uid = secrets.token_hex(4)
+        self.test_email = f"p11_farmer_{self.uid}@example.com"
+        self.created_user_ids = []
+
+    def tearDown(self):
+        # Reset mail config overrides
+        app.config.pop('MAIL_SERVER', None)
+        app.config.pop('MAIL_PORT', None)
+        if self.created_user_ids:
+            conn = database.get_db_connection()
+            placeholders = ",".join("?" for _ in self.created_user_ids)
+            conn.execute(f"DELETE FROM users WHERE id IN ({placeholders})", tuple(self.created_user_ids))
+            conn.commit()
+            conn.close()
+
+    def test_p11_test1_successful_registration_and_email_delivery(self):
+        """TEST 1: Successful registration triggers verification email, keeps user unverified until link clicked."""
+        app.config['MAIL_SERVER'] = 'smtp.fake-relay.example.com'
+        app.config['MAIL_PORT'] = 587
+
+        with patch('app.send_verification_email', return_value=(True, None)) as mock_send:
+            res = self.client.post('/login', data={
+                'action': 'register',
+                'name': 'Test Farmer One',
+                'email': self.test_email,
+                'password': 'StrongPassword123!',
+                'confirm_password': 'StrongPassword123!'
+            })
+            self.assertEqual(res.status_code, 200)
+            self.assertIn("Registration successful!", res.get_data(as_text=True))
+            mock_send.assert_called_once()
+            args, kwargs = mock_send.call_args
+            self.assertEqual(args[0], self.test_email)
+            self.assertIn('/verify-email/', args[2])
+
+            user = database.get_user_by_email(self.test_email)
+            self.assertIsNotNone(user)
+            self.created_user_ids.append(user['id'])
+            self.assertEqual(user['is_verified'], 0)
+            token = user['verification_token']
+            self.assertTrue(token)
+
+            # Verification flow works
+            res_ver = self.client.get(f'/verify-email/{token}', follow_redirects=False)
+            self.assertEqual(res_ver.status_code, 302)
+            self.assertIn('verified=1', res_ver.location)
+
+            user_verified = database.get_user_by_id(user['id'])
+            self.assertEqual(user_verified['is_verified'], 1)
+
+    def test_p11_test2_missing_production_email_configuration(self):
+        """TEST 2: Missing email configuration in production safely blocks registration without false success."""
+        app.config['MAIL_SERVER'] = ''
+        old_env = os.environ.get('FLASK_ENV')
+        os.environ['FLASK_ENV'] = 'production'
+        try:
+            res = self.client.post('/login', data={
+                'action': 'register',
+                'name': 'Prod Farmer',
+                'email': self.test_email,
+                'password': 'StrongPassword123!',
+                'confirm_password': 'StrongPassword123!'
+            })
+            self.assertEqual(res.status_code, 200)
+            html = res.get_data(as_text=True)
+            self.assertNotIn("Registration successful!", html)
+            self.assertIn("email delivery is not configured", html)
+
+            # User must NOT be created or verified
+            user = database.get_user_by_email(self.test_email)
+            self.assertIsNone(user)
+
+            # No authentication bypass
+            with self.client.session_transaction() as sess:
+                self.assertNotIn('user', sess)
+        finally:
+            if old_env is not None:
+                os.environ['FLASK_ENV'] = old_env
+            else:
+                os.environ.pop('FLASK_ENV', None)
+
+    def test_p11_test3_email_provider_failure(self):
+        """TEST 3: Email delivery failure preserves unverified state, does not authenticate, returns safe error."""
+        app.config['MAIL_SERVER'] = 'smtp.fake-relay.example.com'
+
+        with patch('app.send_verification_email', return_value=(False, 'SMTPConnectError')) as mock_send:
+            res = self.client.post('/login', data={
+                'action': 'register',
+                'name': 'Failing Farmer',
+                'email': self.test_email,
+                'password': 'StrongPassword123!',
+                'confirm_password': 'StrongPassword123!'
+            })
+            self.assertEqual(res.status_code, 200)
+            html = res.get_data(as_text=True)
+            self.assertIn("could not deliver the verification email", html)
+            self.assertIn("resend", html)
+
+            # User is in DB but remains unverified
+            user = database.get_user_by_email(self.test_email)
+            self.assertIsNotNone(user)
+            self.created_user_ids.append(user['id'])
+            self.assertEqual(user['is_verified'], 0)
+
+            # No session / auth bypass
+            with self.client.session_transaction() as sess:
+                self.assertNotIn('user', sess)
+
+    def test_p11_test4_verification_valid_token(self):
+        """TEST 4: Using valid token successfully activates account and allows normal login."""
+        token = secrets.token_urlsafe(32)
+        user = database.create_user_with_password(
+            email=self.test_email,
+            name="Valid Farmer",
+            password_hash=generate_password_hash("ValidPass123!"),
+            verification_token=token,
+            token_created_at=datetime.datetime.utcnow().isoformat(),
+            is_verified=0
+        )
+        self.created_user_ids.append(user['id'])
+
+        res = self.client.get(f'/verify-email/{token}', follow_redirects=False)
+        self.assertEqual(res.status_code, 302)
+        self.assertIn('verified=1', res.location)
+
+        verified_user = database.get_user_by_id(user['id'])
+        self.assertEqual(verified_user['is_verified'], 1)
+
+        # Normal login works
+        res_login = self.client.post('/login', data={
+            'action': 'login',
+            'email': self.test_email,
+            'password': 'ValidPass123!'
+        }, follow_redirects=False)
+        self.assertEqual(res_login.status_code, 302)
+
+    def test_p11_test5_invalid_and_expired_tokens(self):
+        """TEST 5: Invalid and expired tokens are safely rejected."""
+        # Invalid token
+        res_inv = self.client.get('/verify-email/completely-bogus-token-12345', follow_redirects=False)
+        self.assertEqual(res_inv.status_code, 302)
+        self.assertIn('alert=invalid_token', res_inv.location)
+
+        # Expired token (created 48 hours ago)
+        expired_token = secrets.token_urlsafe(32)
+        expired_created = (datetime.datetime.utcnow() - datetime.timedelta(hours=48)).isoformat()
+        user = database.create_user_with_password(
+            email=self.test_email,
+            name="Expired Farmer",
+            password_hash=generate_password_hash("ValidPass123!"),
+            verification_token=expired_token,
+            token_created_at=expired_created,
+            is_verified=0
+        )
+        self.created_user_ids.append(user['id'])
+
+        res_exp = self.client.get(f'/verify-email/{expired_token}', follow_redirects=False)
+        self.assertEqual(res_exp.status_code, 302)
+        self.assertIn('alert=expired_token', res_exp.location)
+
+        # User remains unverified
+        unverified_user = database.get_user_by_id(user['id'])
+        self.assertEqual(unverified_user['is_verified'], 0)
+
+
+class MlModelColdStartAndStarvationSecurityTestCase(unittest.TestCase):
+    def setUp(self):
+        import concurrent.futures
+        from disease_service import clear_model_cache
+        app.config['TESTING'] = True
+        self.client = app.test_client()
+        clear_rate_limits()
+        clear_model_cache()
+
+    def tearDown(self):
+        from disease_service import clear_model_cache
+        clear_model_cache()
+
+    def test_p12_test1_lazy_loading_import_does_not_initialize_model(self):
+        """TEST 1: Importing disease_service does not initialize the expensive model."""
+        from disease_service import is_model_loaded
+        self.assertFalse(is_model_loaded(), "Model must not be initialized merely by importing module")
+
+    def test_p12_test2_first_prediction_initializes_model(self):
+        """TEST 2: The first actual prediction initializes the model."""
+        from disease_service import is_model_loaded, _load_plant_disease_model
+        self.assertFalse(is_model_loaded())
+        model = _load_plant_disease_model()
+        self.assertIsNotNone(model)
+        self.assertTrue(is_model_loaded(), "Model must be marked loaded after first load call")
+
+    def test_p12_test3_model_is_cached_and_reused_without_reload(self):
+        """TEST 3: Sequential calls reuse the identical cached model instance without reloading."""
+        from disease_service import _load_plant_disease_model
+        model_1 = _load_plant_disease_model()
+        model_2 = _load_plant_disease_model()
+        self.assertIs(model_1, model_2, "Sequential calls must return identical cached model object")
+
+    def test_p12_test4_concurrent_initialization_race_condition_protection(self):
+        """TEST 4: Concurrent calls from multiple threads serialize and trigger only one load."""
+        import concurrent.futures
+        from disease_service import _load_plant_disease_model
+        load_count = 0
+
+        def mock_load(*args, **kwargs):
+            nonlocal load_count
+            load_count += 1
+            time.sleep(0.05)  # simulate loading delay
+            mock_model = MagicMock()
+            mock_model.eval.return_value = None
+            return mock_model
+
+        with patch('transformers.AutoModelForImageClassification.from_pretrained', side_effect=mock_load):
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                futures = [executor.submit(_load_plant_disease_model) for _ in range(5)]
+                results = [f.result() for f in futures]
+
+            # All threads must receive the same non-None model
+            self.assertEqual(len(results), 5)
+            first_model = results[0]
+            self.assertIsNotNone(first_model)
+            for m in results:
+                self.assertIs(m, first_model)
+
+            # from_pretrained must be executed at most once despite 5 concurrent callers
+            self.assertEqual(load_count, 1, "Concurrent initialization must execute from_pretrained exactly once")
+
+    def test_p12_test5_model_loading_failure_safety_and_fallback(self):
+        """TEST 5: Model initialization failure does not crash Flask, exposes no tracebacks, and returns safe error."""
+        from disease_service import diagnose_plant_photo
+        with patch('transformers.AutoModelForImageClassification.from_pretrained', side_effect=RuntimeError("Simulated CUDA/HF OOM")):
+            # Direct service call
+            img = Image.new('RGB', (224, 224), color=(20, 160, 50))
+            buf = io.BytesIO()
+            img.save(buf, format='PNG')
+            res = diagnose_plant_photo(filename="test.png", file_bytes=buf.getvalue())
+
+            self.assertFalse(res['success'])
+            self.assertIn("Disease model could not process", res['error'])
+            self.assertNotIn("RuntimeError", res['error'])
+            self.assertNotIn("Simulated CUDA/HF OOM", res['error'])
+
+            # API call via test client
+            buf.seek(0)
+            photo = (buf, "test.png")
+            api_res = self.client.post('/api/diagnose-disease', data={'leaf_photo': photo, 'crop': 'wheat'}, content_type='multipart/form-data')
+            self.assertEqual(api_res.status_code, 200)
+            data = api_res.get_json()
+            self.assertFalse(data['success'])
+            self.assertIn("Disease model could not process", data['error'])
+            self.assertNotIn("Traceback", str(data))
+
+    def test_p12_test6_failure_cooldown_guard_prevents_repeated_load_attempts(self):
+        """TEST 6: Cooldown guard prevents subsequent requests from hammering failing loader repeatedly."""
+        from disease_service import _load_plant_disease_model
+        call_count = 0
+        def failing_load(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            raise RuntimeError("Simulated Fatal Engine Error")
+
+        with patch('transformers.AutoModelForImageClassification.from_pretrained', side_effect=failing_load):
+            # First attempt fails
+            m1 = _load_plant_disease_model()
+            self.assertIsNone(m1)
+            calls_after_first = call_count
+            self.assertGreaterEqual(calls_after_first, 1)
+
+            # Immediate second attempt within cooldown must fail fast without calling from_pretrained again
+            m2 = _load_plant_disease_model()
+            self.assertIsNone(m2)
+            self.assertEqual(call_count, calls_after_first, "Loader must not retry immediately within cooldown window")
+
+
+class GeocodingDomXssSecurityTestCase(unittest.TestCase):
+    def setUp(self):
+        app.config['TESTING'] = True
+        self.client = app.test_client()
+        clear_rate_limits()
+
+    def test_p21_test1_malicious_location_name_in_api_and_template_safety(self):
+        """TEST 1: Malicious location name payload is treated as plain text, not parsed as HTML."""
+        payload = "<img src=x onerror=alert(document.domain)>"
+        fake_results = [{"name": payload, "state": "Maharashtra", "country": "India", "lat": 18.52, "lon": 73.85}]
+
+        with patch('app.search_locations', return_value=fake_results):
+            res = self.client.get('/api/search-locations?q=test')
+            self.assertEqual(res.status_code, 200)
+            data = res.get_json()
+            self.assertEqual(data['results'][0]['name'], payload)
+
+        # Verify weather.html does NOT use innerHTML to insert location data
+        weather_html = os.path.join(app.root_path, "templates", "weather.html")
+        with open(weather_html, "r", encoding="utf-8") as f:
+            content = f.read()
+        self.assertNotIn("item.innerHTML", content, "item.innerHTML must not be used in location search results")
+        self.assertNotIn("resultsDropdown.innerHTML", content, "resultsDropdown.innerHTML must not be used")
+        self.assertIn("strong.textContent = loc.name", content, "loc.name must be set via safe textContent")
+
+    def test_p21_test2_script_tag_payload_in_dropdown_and_page_rendering(self):
+        """TEST 2: <script> tag payload in geocoding data or query params does not execute."""
+        payload = "<script>alert(document.domain)</script>"
+        fake_results = [{"name": payload, "state": payload, "country": "India", "lat": 18.52, "lon": 73.85}]
+
+        with patch('app.search_locations', return_value=fake_results):
+            res = self.client.get('/api/search-locations?q=test')
+            self.assertEqual(res.status_code, 200)
+
+        # Verify that rendering /weather with this name does not inject unescaped executable script
+        res_weather = self.client.get(f'/weather?lat=18.52&lon=73.85&name={payload}')
+        self.assertEqual(res_weather.status_code, 200)
+        html = res_weather.get_data(as_text=True)
+        self.assertNotIn(payload, html, "Raw unescaped <script> tag must not appear in rendered HTML")
+        self.assertIn("&lt;script&gt;alert(document.domain)&lt;/script&gt;", html, "Payload must be HTML-escaped by Jinja")
+
+    def test_p21_test3_event_handler_payload_inert(self):
+        """TEST 3: Event handler payload <div onmouseover=...> remains plain text."""
+        payload = '<div onmouseover="alert(document.domain)">Test</div>'
+        fake_results = [{"name": payload, "state": "Goa", "country": payload, "lat": 15.29, "lon": 74.12}]
+
+        weather_html = os.path.join(app.root_path, "templates", "weather.html")
+        with open(weather_html, "r", encoding="utf-8") as f:
+            content = f.read()
+        self.assertIn("span.textContent = subText", content, "State and country must be set via safe textContent")
+
+        # When passed to weather route, verify autoescaping
+        res = self.client.get(f'/weather?lat=15.29&lon=74.12&name={payload}')
+        self.assertEqual(res.status_code, 200)
+        html = res.get_data(as_text=True)
+        self.assertNotIn(payload, html)
+        self.assertIn("&lt;div onmouseover=", html)
+
+    def test_p21_test4_normal_location_data_formatting(self):
+        """TEST 4: Normal location values (Mumbai, Maharashtra, India) format safely into DOM attributes and text."""
+        weather_html = os.path.join(app.root_path, "templates", "weather.html")
+        with open(weather_html, "r", encoding="utf-8") as f:
+            content = f.read()
+        self.assertIn("encodeURIComponent", content)
+        self.assertIn("strong.textContent = loc.name", content)
+        self.assertIn("No locations found. Try typing district name.", content)
+
+        # End to end check with legitimate location
+        res = self.client.get('/weather?lat=19.076&lon=72.877&name=Mumbai,%20Maharashtra')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Mumbai, Maharashtra", res.get_data(as_text=True))
+
+    def test_p21_test5_weather_route_and_search_api_regression(self):
+        """TEST 5: Verify weather search API and page routes continue functioning normally."""
+        res_api = self.client.get('/api/search-locations?q=Pune')
+        self.assertEqual(res_api.status_code, 200)
+        data = res_api.get_json()
+        self.assertIn('results', data)
+
+        res_page = self.client.get('/weather')
+        self.assertEqual(res_page.status_code, 200)
+        self.assertIn("locationSearchInput", res_page.get_data(as_text=True))
+        self.assertIn("searchResultsDropdown", res_page.get_data(as_text=True))
+
+
+class GoogleSignInSecurityTestCase(unittest.TestCase):
+    """Test suite verifying P2-2: Google Sign-In GIS token verification & dev mock safety."""
+
+    def setUp(self):
+        self.client = app.test_client()
+        app.config['TESTING'] = True
+        self.orig_env = os.environ.copy()
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self.orig_env)
+
+    def test_production_rejects_mock_auth_without_token(self):
+        """Production environment strictly rejects mock authentication payloads without real token."""
+        with patch.dict(os.environ, {"FLASK_ENV": "production", "ENABLE_DEV_MOCK_AUTH": "1"}):
+            app.config["ENV"] = "production"
+            try:
+                res = self.client.post('/api/auth/google', json={"email": "attacker@gmail.com", "name": "Attacker"})
+                self.assertEqual(res.status_code, 401)
+                data = res.get_json()
+                self.assertFalse(data.get("success"))
+                self.assertIn("Mock authentication is disabled", data.get("error"))
+            finally:
+                app.config["ENV"] = "development"
+
+    def test_dev_mock_auth_disabled_by_default(self):
+        """In development mode, mock auth without token is rejected when ENABLE_DEV_MOCK_AUTH is not set."""
+        with patch.dict(os.environ, {"FLASK_ENV": "development", "ENABLE_DEV_MOCK_AUTH": "0"}):
+            app.config["ENV"] = "development"
+            app.config["ENABLE_DEV_MOCK_AUTH"] = False
+            res = self.client.post('/api/auth/google', json={"email": "farmer@gmail.com", "name": "Farmer"})
+            self.assertEqual(res.status_code, 401)
+            data = res.get_json()
+            self.assertFalse(data.get("success"))
+
+    def test_dev_mock_auth_allowed_when_enabled(self):
+        """In development mode, mock auth succeeds when ENABLE_DEV_MOCK_AUTH=1."""
+        with patch.dict(os.environ, {"FLASK_ENV": "development", "ENABLE_DEV_MOCK_AUTH": "1"}):
+            app.config["ENV"] = "development"
+            res = self.client.post('/api/auth/google', json={"email": "devfarmer@gmail.com", "name": "Dev Farmer"})
+            self.assertEqual(res.status_code, 200)
+            data = res.get_json()
+            self.assertTrue(data.get("success"))
+            self.assertEqual(data.get("user", {}).get("email"), "devfarmer@gmail.com")
+
+    def test_valid_google_token_verifies_successfully(self):
+        """Legitimate Google ID token verifies with Google OAuth API and logs in the user."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "email": "verified.user@gmail.com",
+            "name": "Verified User",
+            "email_verified": True,
+            "picture": "https://example.com/avatar.jpg",
+            "aud": "expected-client-id"
+        }
+
+        with patch.dict(os.environ, {"GOOGLE_CLIENT_ID": "expected-client-id"}):
+            with patch('requests.get', return_value=mock_response):
+                res = self.client.post('/api/auth/google', json={"credential": "valid-jwt-token"})
+                self.assertEqual(res.status_code, 200)
+                data = res.get_json()
+                self.assertTrue(data.get("success"))
+                self.assertEqual(data.get("user", {}).get("email"), "verified.user@gmail.com")
+
+    def test_invalid_google_token_returns_401(self):
+        """Invalid or expired Google token returns 401 Unauthorized."""
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_response.json.return_value = {"error_description": "Invalid Value"}
+
+        with patch('requests.get', return_value=mock_response):
+            res = self.client.post('/api/auth/google', json={"credential": "invalid-token"})
+            self.assertEqual(res.status_code, 401)
+            data = res.get_json()
+            self.assertFalse(data.get("success"))
+            self.assertIn("Invalid or expired Google token", data.get("error"))
+
+    def test_token_audience_mismatch_returns_401(self):
+        """Token with mismatched audience returns 401 Unauthorized."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "email": "user@gmail.com",
+            "name": "User",
+            "email_verified": True,
+            "aud": "rogue-client-id"
+        }
+
+        with patch.dict(os.environ, {"GOOGLE_CLIENT_ID": "legitimate-client-id"}):
+            with patch('requests.get', return_value=mock_response):
+                res = self.client.post('/api/auth/google', json={"credential": "valid-token-wrong-aud"})
+                self.assertEqual(res.status_code, 401)
+                data = res.get_json()
+                self.assertFalse(data.get("success"))
+                self.assertIn("Token audience mismatch", data.get("error"))
+
+class RateLimiterSecurityTestCase(unittest.TestCase):
+    """Test suite verifying P3-1: Rate limiter thread-safety, bounding, and eviction."""
+
+    def setUp(self):
+        clear_rate_limits()
+
+    def tearDown(self):
+        clear_rate_limits()
+
+    def test_concurrent_access_thread_safety(self):
+        """Concurrent requests to is_rate_limited do not race or cause exceptions."""
+        import concurrent.futures
+
+        key = "test:thread:safe"
+        def hit_limiter(_):
+            return is_rate_limited(key, max_requests=10, window_seconds=60)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            results = list(executor.map(hit_limiter, range(20)))
+
+        # Exactly 10 calls allowed (False), remaining 10 blocked (True)
+        self.assertEqual(results.count(False), 10)
+        self.assertEqual(results.count(True), 10)
+
+    def test_stale_key_pruning_and_bounding(self):
+        """Stale keys are pruned when dictionary size exceeds threshold, preventing memory leaks."""
+        from app import _RATE_LIMITS, _RATE_LIMIT_LOCK
+
+        # Populate with 600 old keys that are older than window_seconds
+        past_time = time.time() - 100
+        with _RATE_LIMIT_LOCK:
+            for i in range(600):
+                _RATE_LIMITS[f"old_key_{i}"] = [past_time]
+
+        # Call is_rate_limited for a new key; it should trigger pruning
+        is_rate_limited("new_active_key", max_requests=5, window_seconds=60)
+
+        with _RATE_LIMIT_LOCK:
+            # All 600 expired keys should be pruned
+            self.assertLessEqual(len(_RATE_LIMITS), 10)
+            self.assertIn("new_active_key", _RATE_LIMITS)
+
+
+class TranslationsParityTestCase(unittest.TestCase):
+    """Test suite verifying P3-2: Translation parity across English, Hindi, and Marathi."""
+
+    def test_translation_keys_parity(self):
+        """Ensure all keys in English catalog exist in Hindi and Marathi catalogs."""
+        import translations
+        en_keys = set(translations.TRANSLATIONS['en'].keys())
+        hi_keys = set(translations.TRANSLATIONS['hi'].keys())
+        mr_keys = set(translations.TRANSLATIONS['mr'].keys())
+
+        missing_hi = en_keys - hi_keys
+        missing_mr = en_keys - mr_keys
+
+        self.assertEqual(missing_hi, set(), f"Missing keys in Hindi: {missing_hi}")
+        self.assertEqual(missing_mr, set(), f"Missing keys in Marathi: {missing_mr}")
+
+
+class DiseaseDiagnosisFrontendRecoveryTestCase(unittest.TestCase):
+    """Test suite verifying P3-3: Disease diagnosis frontend resilience and error recovery."""
+
+    def test_disease_template_includes_timeout_and_error_recovery(self):
+        """Ensure disease.html contains AbortController, timeout handling, and finally block restoring buttons."""
+        disease_html = os.path.join(app.root_path, "templates", "disease.html")
+        with open(disease_html, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertIn("AbortController", content, "AbortController must be used for request timeout management")
+        self.assertIn("btnConfirmScan.disabled = true", content, "Submit button must be disabled to prevent duplicate uploads")
+        self.assertIn("btnConfirmScan.disabled = false", content, "Submit button must be re-enabled in finally block")
+        self.assertIn("Could Not Complete Diagnosis", content, "Friendly error message card must be rendered on server failure")
+        self.assertIn("Diagnosis timed out", content, "Timeout-specific error handling must be present")
+
+
+class WcagAccessibilityTestCase(unittest.TestCase):
+    """Test suite verifying P4-2: WCAG 2.1 form label accessibility across all templates."""
+
+    def test_all_form_inputs_have_accessible_labels(self):
+        """Ensure all non-hidden inputs, selects, and textareas across HTML templates have labels or aria-labels."""
+        import glob
+        from html.parser import HTMLParser
+
+        class InputParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.labels_for = set()
+                self.inside_label = False
+                self.elements = []
+
+            def handle_starttag(self, tag, attrs):
+                attr_dict = dict(attrs)
+                if tag == 'label':
+                    self.inside_label = True
+                    if 'for' in attr_dict:
+                        self.labels_for.add(attr_dict['for'])
+                elif tag in ('input', 'select', 'textarea'):
+                    attr_dict['tag'] = tag
+                    attr_dict['inside_label'] = self.inside_label
+                    self.elements.append(attr_dict)
+
+            def handle_endtag(self, tag):
+                if tag == 'label':
+                    self.inside_label = False
+
+        template_files = glob.glob(os.path.join(app.root_path, 'templates', '*.html'))
+        for tpl_path in template_files:
+            with open(tpl_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            parser = InputParser()
+            parser.feed(content)
+            for el in parser.elements:
+                if el.get('type') in ('hidden', 'submit', 'button', 'reset', 'image'):
+                    continue
+                el_id = el.get('id')
+                has_label = el['inside_label'] or (el_id and el_id in parser.labels_for) or ('aria-label' in el) or ('aria-labelledby' in el)
+                self.assertTrue(
+                    has_label,
+                    f"Unlabeled form control in {os.path.basename(tpl_path)}: tag={el.get('tag')}, id={el_id}, name={el.get('name')}"
+                )
+
+
+class GitignoreSecurityTestCase(unittest.TestCase):
+    """Test suite verifying P4-3: Protection against sensitive files and backups exposure."""
+
+    def test_gitignore_covers_sensitive_and_backup_patterns(self):
+        """Ensure .gitignore excludes environment files, databases, logs, and backup files."""
+        gitignore_path = os.path.join(app.root_path, '.gitignore')
+        with open(gitignore_path, 'r', encoding='utf-8') as f:
+            lines = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+
+        self.assertIn('.env', lines)
+        self.assertIn('*.db', lines)
+        self.assertIn('*.bak', lines)
+        self.assertIn('*.backup', lines)
+        self.assertIn('*.sqlite', lines)
+
+
 if __name__ == '__main__':
     unittest.main()
+
 
 
 

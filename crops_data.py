@@ -1832,14 +1832,10 @@ SEED_CLASSES = [
 ]
 
 
-def calculate_crop_plan(crop_id, sowing_date_str, land_size_val, unit="acre"):
-    """
-    Calculate date-wise milestones and land-scaled fertilizer requirements.
-    Supported units: acre, hectare (1 ha = 2.47 acres), guntha (40 guntha = 1 acre), bigha (1.6 bigha = 1 acre approx)
-    """
 def calculate_crop_plan(crop_id, sowing_date_str="2026-06-01", land_size_val=1.0, unit="acre", yield_per_acre=None, price_per_quintal=None, cost_per_acre=None):
     """
     Calculate comprehensive agronomic timeline, fertilizer requirements, and Farm Profitability Economics (B:C Ratio).
+    Supported units: acre, hectare (1 ha = 2.471 acres), guntha (40 guntha = 1 acre), bigha (1.6 bigha = 1 acre approx).
     """
     crop = CROPS.get(crop_id, CROPS["wheat"])
 

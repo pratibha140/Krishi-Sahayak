@@ -68,33 +68,33 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="form-grid-2">
                         <div class="form-group">
-                            <label class="form-label-bold">{{ t.farmer_name_label }}</label>
-                            <input type="text" name="name" value="{{ user.name }}" class="form-input" required>
+                            <label for="profileName" class="form-label-bold">{{ t.farmer_name_label }}</label>
+                            <input type="text" id="profileName" name="name" value="{{ user.name }}" class="form-input" required>
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label-bold">{{ t.email_label }}</label>
-                            <input type="text" name="email" value="{{ user.email }}" class="form-input" required>
+                            <label for="profileEmail" class="form-label-bold">{{ t.email_label }}</label>
+                            <input type="email" id="profileEmail" name="email" value="{{ user.email }}" class="form-input" readonly style="background-color: var(--color-surface-variant, #f1f5f9); cursor: not-allowed; opacity: 0.85;">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label-bold">{{ t.state_label }}</label>
-                            <input type="text" name="state" value="{{ user.state if user.state else 'Maharashtra' }}" class="form-input" placeholder="e.g. Maharashtra, Punjab, UP">
+                            <label for="profileState" class="form-label-bold">{{ t.state_label }}</label>
+                            <input type="text" id="profileState" name="state" value="{{ user.state if user.state else 'Maharashtra' }}" class="form-input" placeholder="e.g. Maharashtra, Punjab, UP">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label-bold">{{ t.district_label }}</label>
-                            <input type="text" name="district" value="{{ user.district if user.district else 'Pune' }}" class="form-input" placeholder="e.g. Pune, Nashik, Nagpur">
+                            <label for="profileDistrict" class="form-label-bold">{{ t.district_label }}</label>
+                            <input type="text" id="profileDistrict" name="district" value="{{ user.district if user.district else 'Pune' }}" class="form-input" placeholder="e.g. Pune, Nashik, Nagpur">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label-bold">{{ t.land_size_label }} (Acres)</label>
-                            <input type="number" step="0.1" name="land_size" value="{{ user.land_size if user.land_size else '2.0' }}" class="form-input">
+                            <label for="profileLandSize" class="form-label-bold">{{ t.land_size_label }} (Acres)</label>
+                            <input type="number" step="0.1" id="profileLandSize" name="land_size" value="{{ user.land_size if user.land_size else '2.0' }}" class="form-input">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label-bold">{{ t.primary_crop_label }}</label>
-                            <select name="primary_crop" class="form-input">
+                            <label for="profilePrimaryCrop" class="form-label-bold">{{ t.primary_crop_label }}</label>
+                            <select id="profilePrimaryCrop" name="primary_crop" class="form-input">
                                 {% for c_id, c_info in all_crops.items() %}
                                 <option value="{{ c_id }}" {% if user.primary_crop == c_id %}selected{% endif %}>
                                     {{ c_info.names[language] if language in c_info.names else c_info.names.en }}
@@ -104,8 +104,8 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label-bold">{{ t.soil_type_label }}</label>
-                            <select name="soil_type" class="form-input">
+                            <label for="profileSoilType" class="form-label-bold">{{ t.soil_type_label }}</label>
+                            <select id="profileSoilType" name="soil_type" class="form-input">
                                 <option value="Black Cotton Soil" {% if user.soil_type == 'Black Cotton Soil' %}selected{% endif %}>Black Cotton Soil (Regur)</option>
                                 <option value="Alluvial Soil" {% if user.soil_type == 'Alluvial Soil' %}selected{% endif %}>Alluvial Soil</option>
                                 <option value="Red Sandy Loam" {% if user.soil_type == 'Red Sandy Loam' %}selected{% endif %}>Red & Yellow Sandy Loam</option>

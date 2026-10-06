@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="{{ language }}">
 <head>
     <meta charset="UTF-8">
@@ -42,7 +42,7 @@
 
                 <form id="addReminderForm" class="mt-3">
                     <div class="form-group mb-3">
-                        <label class="form-label-bold mb-2">{{ t.reminder_title_label }}</label>
+                        <label for="remTitle" class="form-label-bold mb-2">{{ t.reminder_title_label }}</label>
                         <input type="text" id="remTitle" class="form-input" placeholder="{% if language == 'hi' %}जैसे ड्रिप सिंचाई या खाद की दूसरी खुराक{% elif language == 'mr' %}उदा. ठिबक सिंचन किंवा दुसरी खत मात्रा{% else %}Enter task title (e.g. Drip Irrigation){% endif %}" required>
                     </div>
 
@@ -109,7 +109,7 @@
                     </div>
 
                     <div class="form-group mb-4">
-                        <label class="form-label-bold mb-2">{{ t.reminder_due_date_label }}</label>
+                        <label for="remDueDate" class="form-label-bold mb-2">{{ t.reminder_due_date_label }}</label>
                         <input type="date" id="remDueDate" class="form-input" required>
                     </div>
 

@@ -845,10 +845,13 @@
                 window.google.accounts.id.initialize({
                     client_id: "1000000000000-krishisahayak.apps.googleusercontent.com",
                     callback: function(response) {
-                        submitGoogleAuth("Google Farmer", "farmer.kisan@gmail.com", "https://api.dicebear.com/7.x/initials/svg?seed=GoogleFarmer");
+                        if (response && response.credential) {
+                            submitGoogleAuth({ credential: response.credential });
+                        }
                     }
                 });
                 window.google.accounts.id.prompt();
+                return;
             } catch (e) {
                 console.log("GIS init fallback", e);
             }
@@ -856,23 +859,33 @@
 
         const sampleEmail = "kisan." + Math.floor(Math.random()*900 + 100) + "@gmail.com";
         const sampleName = "{{ 'किसान साथी' if language == 'hi' else ('शेतकरी मित्र' if language == 'mr' else 'Kisan Farmer') }}";
-        submitGoogleAuth(sampleName, sampleEmail, 'https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(sampleName));
+        submitGoogleAuth({
+            name: sampleName,
+            email: sampleEmail,
+            picture: 'https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(sampleName)
+        });
     }
 
-    function submitGoogleAuth(name, email, picture) {
+    function submitGoogleAuth(payload) {
         fetch('/api/auth/google', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
-            body: JSON.stringify({ name: name, email: email, picture: picture })
+            body: JSON.stringify(payload)
         })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
                 window.location.href = "{{ url_for('home') }}";
+            } else if (data.error) {
+                alert(data.error);
+                const btn = document.getElementById('btnGoogleLogin');
+                if (btn) btn.style.opacity = '1';
             }
         })
         .catch(err => {
-            window.location.href = "{{ url_for('home') }}";
+            console.error(err);
+            const btn = document.getElementById('btnGoogleLogin');
+            if (btn) btn.style.opacity = '1';
         });
     }
     </script>

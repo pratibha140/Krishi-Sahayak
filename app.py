@@ -60,6 +60,7 @@ from weather_service import (
     reverse_geocode,
 )
 
+import threading
 import time
 from collections import defaultdict
 
@@ -94,23 +95,47 @@ if os.environ.get("FLASK_ENV") == "production" or os.environ.get("USE_PROXY_FIX"
 
 # Section 6.5: In-memory IP/action rate limiter for auth and heavy endpoints
 _RATE_LIMITS = defaultdict(list)
+_RATE_LIMIT_LOCK = threading.Lock()
+MAX_RATE_LIMIT_KEYS = 10000
 
 def is_rate_limited(key, max_requests=15, window_seconds=60):
     """
     In-memory sliding-window rate limiter per key (e.g. 'login:<ip>', 'resend:<ip>', 'diagnose:<ip>').
+    Thread-safe and memory-bounded to prevent worker starvation and memory exhaustion.
     Returns True if request exceeds max_requests within window_seconds, False otherwise.
     """
     now = time.time()
-    clean_history = [t for t in _RATE_LIMITS[key] if now - t < window_seconds]
-    _RATE_LIMITS[key] = clean_history
-    if len(clean_history) >= max_requests:
-        return True
-    _RATE_LIMITS[key].append(now)
-    return False
+    with _RATE_LIMIT_LOCK:
+        # Prune stale keys if dictionary size exceeds threshold
+        if len(_RATE_LIMITS) > 500:
+            stale_keys = [
+                k for k, timestamps in _RATE_LIMITS.items()
+                if not timestamps or (now - timestamps[-1] >= window_seconds)
+            ]
+            for k in stale_keys:
+                _RATE_LIMITS.pop(k, None)
+
+            # Enforce hard maximum limit by discarding oldest entries if still oversized
+            if len(_RATE_LIMITS) >= MAX_RATE_LIMIT_KEYS:
+                excess = len(_RATE_LIMITS) - MAX_RATE_LIMIT_KEYS + 100
+                for k in list(_RATE_LIMITS.keys())[:excess]:
+                    _RATE_LIMITS.pop(k, None)
+
+        history = _RATE_LIMITS.get(key, [])
+        clean_history = [t for t in history if now - t < window_seconds]
+
+        if len(clean_history) >= max_requests:
+            _RATE_LIMITS[key] = clean_history
+            return True
+
+        clean_history.append(now)
+        _RATE_LIMITS[key] = clean_history
+        return False
 
 def clear_rate_limits():
     """Clear in-memory rate limiting state (primarily for test isolation)."""
-    _RATE_LIMITS.clear()
+    with _RATE_LIMIT_LOCK:
+        _RATE_LIMITS.clear()
 
 # Built-in CSRF Protection
 def generate_csrf_token():
@@ -277,6 +302,124 @@ def is_token_expired(token_created_at_str):
         return True
 
 
+def get_mail_config():
+    """
+    Returns email configuration dictionary from app.config or environment variables.
+    """
+    server = (app.config.get("MAIL_SERVER") or os.environ.get("MAIL_SERVER") or "").strip()
+    port_val = app.config.get("MAIL_PORT") or os.environ.get("MAIL_PORT") or 587
+    try:
+        port = int(port_val)
+    except (ValueError, TypeError):
+        port = 587
+    username = (app.config.get("MAIL_USERNAME") or os.environ.get("MAIL_USERNAME") or "").strip()
+    password = (app.config.get("MAIL_PASSWORD") or os.environ.get("MAIL_PASSWORD") or "").strip()
+    use_tls_val = app.config.get("MAIL_USE_TLS")
+    if use_tls_val is None:
+        use_tls = os.environ.get("MAIL_USE_TLS", "true").strip().lower() in ("true", "1", "yes")
+    else:
+        use_tls = bool(use_tls_val)
+    use_ssl_val = app.config.get("MAIL_USE_SSL")
+    if use_ssl_val is None:
+        use_ssl = os.environ.get("MAIL_USE_SSL", "false").strip().lower() in ("true", "1", "yes")
+    else:
+        use_ssl = bool(use_ssl_val)
+    default_sender = (
+        app.config.get("MAIL_DEFAULT_SENDER")
+        or app.config.get("MAIL_FROM")
+        or os.environ.get("MAIL_DEFAULT_SENDER")
+        or os.environ.get("MAIL_FROM")
+        or "no-reply@krishisahayak.in"
+    )
+    return {
+        "server": server,
+        "port": port,
+        "username": username,
+        "password": password,
+        "use_tls": use_tls,
+        "use_ssl": use_ssl,
+        "default_sender": default_sender,
+    }
+
+
+def is_email_configured():
+    """
+    Checks if an email delivery server is configured.
+    """
+    cfg = get_mail_config()
+    return bool(cfg["server"])
+
+
+def send_verification_email(recipient_email, recipient_name, verify_url):
+    """
+    Delivers a secure email verification link to the recipient using SMTP.
+    Returns (True, None) on success, or (False, error_reason) on failure.
+    Never exposes credentials or internal errors.
+    """
+    cfg = get_mail_config()
+    if not cfg["server"]:
+        return False, "Email service is not configured"
+
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "Verify your Krishi Sahayak Account"
+        msg["From"] = cfg["default_sender"]
+        msg["To"] = recipient_email
+
+        text_content = (
+            f"Namaste {recipient_name},\n\n"
+            f"Thank you for registering with Krishi Sahayak.\n"
+            f"Please verify your email address by opening the following link:\n\n"
+            f"{verify_url}\n\n"
+            f"This link will expire in 24 hours.\n\n"
+            f"If you did not create this account, please disregard this email.\n"
+            f"Krishi Sahayak Team"
+        )
+
+        html_content = f"""<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #16a34a; padding: 15px; border-radius: 8px 8px 0 0; text-align: center;">
+        <h2 style="color: #ffffff; margin: 0;">Krishi Sahayak</h2>
+    </div>
+    <div style="background-color: #ffffff; padding: 25px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+        <p>Namaste <strong>{recipient_name}</strong>,</p>
+        <p>Thank you for registering with Krishi Sahayak. Please verify your email address to activate your account and start receiving farming advisory services.</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{verify_url}" style="background-color: #16a34a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Verify Email Address</a>
+        </div>
+        <p style="font-size: 0.9em; color: #64748b;">Or copy and paste this link in your browser:<br><a href="{verify_url}" style="color: #16a34a; word-break: break-all;">{verify_url}</a></p>
+        <p style="font-size: 0.85em; color: #94a3b8; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;">This verification link will expire in 24 hours. If you did not create an account, you can safely ignore this email.</p>
+    </div>
+</body>
+</html>"""
+
+        msg.attach(MIMEText(text_content, "plain", "utf-8"))
+        msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+        timeout = 10
+        if cfg["use_ssl"]:
+            server = smtplib.SMTP_SSL(cfg["server"], cfg["port"], timeout=timeout)
+        else:
+            server = smtplib.SMTP(cfg["server"], cfg["port"], timeout=timeout)
+            if cfg["use_tls"]:
+                server.starttls()
+
+        if cfg["username"] and cfg["password"]:
+            server.login(cfg["username"], cfg["password"])
+
+        server.send_message(msg)
+        server.quit()
+        return True, None
+    except Exception as e:
+        print(f"[SECURITY] Email delivery failure for {recipient_email}: {type(e).__name__}", flush=True)
+        return False, str(type(e).__name__)
+
+
 def render_auth_page(alert_msg=None, alert_type="info", mode="login", dev_verify_link=None, show_resend_email=None, form_data=None):
     ctx = template_context("login")
     ctx["is_onboarding"] = request.args.get("onboarding") == "1"
@@ -373,6 +516,17 @@ def login():
                 form_data=form_data
             )
 
+        # Production check: verify that an email delivery provider is configured before accepting registration
+        is_prod = os.environ.get("FLASK_ENV") == "production" or app.config.get("ENV") == "production"
+
+        if is_prod and not is_email_configured():
+            return render_auth_page(
+                alert_msg="Registration is temporarily unavailable because email delivery is not configured. Please contact the administrator or try again later.",
+                alert_type="error",
+                mode="register",
+                form_data=form_data
+            )
+
         # Create unverified user with secure token
         token = secrets.token_urlsafe(32)
         token_created_at = datetime.datetime.utcnow().isoformat()
@@ -390,9 +544,24 @@ def login():
         )
 
         verify_url = url_for("verify_email", token=token, _external=True)
-        print(f"[SECURITY] Email verification link for {email}: {verify_url}", flush=True)
 
-        is_prod = os.environ.get("FLASK_ENV") == "production"
+        # Deliver verification email if provider is configured
+        if is_email_configured():
+            email_sent, _ = send_verification_email(email, farmer_name, verify_url)
+            if not email_sent:
+                # Delivery failed: preserve unverified status in DB, provide safe error, allow resend
+                return render_auth_page(
+                    alert_msg="Your account was registered, but we could not deliver the verification email right now. Please click resend below or try again later.",
+                    alert_type="error",
+                    mode="login",
+                    dev_verify_link=None,
+                    show_resend_email=email,
+                    form_data={"email": email}
+                )
+
+        if not is_prod:
+            print(f"[SECURITY] Email verification link for {email}: {verify_url}", flush=True)
+
         return render_auth_page(
             alert_msg=f"Registration successful! We have sent a unique verification link to {email}. Accounts remain unverified until you click the link.",
             alert_type="info",
@@ -404,7 +573,7 @@ def login():
 
     # --- 2. SIGN-IN FLOW ---
     # Backward compatibility with headless test suite (posting name + email without password)
-    if not password and name and email:
+    if (app.config.get("TESTING") or app.testing) and not password and name and email:
         db_user = database.save_user(
             email=email,
             name=name,
@@ -512,12 +681,18 @@ def resend_verification():
 
     user = database.get_user_by_email(email)
     verify_url = None
+    is_prod = os.environ.get("FLASK_ENV") == "production" or app.config.get("ENV") == "production"
+
     if user and user.get("is_verified") == 0:
         token = secrets.token_urlsafe(32)
         token_created_at = datetime.datetime.utcnow().isoformat()
         database.update_verification_token(user["id"], token, token_created_at)
         verify_url = url_for("verify_email", token=token, _external=True)
-        print(f"[SECURITY] Resent email verification link for {email}: {verify_url}", flush=True)
+
+        if is_email_configured():
+            send_verification_email(email, user.get("name", "Farmer"), verify_url)
+        elif not is_prod:
+            print(f"[SECURITY] Resent email verification link for {email}: {verify_url}", flush=True)
 
     return render_auth_page(
         alert_msg="If that email is registered and unverified, a fresh verification link has been sent.",
@@ -535,34 +710,46 @@ def profile():
     if not user:
         return redirect(url_for("login", next=url_for("profile")))
 
+    user_id = user.get("id")
+    if not user_id and user.get("email"):
+        db_user = database.get_user_by_email(user["email"])
+        if db_user:
+            user = db_user
+            session["user"] = db_user
+            user_id = db_user.get("id")
+
+    if not user_id:
+        return redirect(url_for("login", next=url_for("profile")))
+
     if request.method == "POST":
-        name = request.form.get("name", user.get("name", "")).strip()
-        email = request.form.get("email", user.get("email", "")).strip()
+        name = request.form.get("name", user.get("name", "")).strip() or user.get("name", "")
+        # Submitted email is NEVER used to select or update any database record (fixes P0-2 IDOR).
+        # The authenticated user's ID is immutable and strictly binds the profile update.
         state = request.form.get("state", user.get("state", "Maharashtra")).strip()
         district = request.form.get("district", user.get("district", "Pune")).strip()
         try:
             land_size = float(request.form.get("land_size", user.get("land_size", 2.0)))
-        except ValueError:
+        except (ValueError, TypeError):
             land_size = user.get("land_size", 2.0)
         primary_crop = request.form.get("primary_crop", user.get("primary_crop", "wheat"))
         soil_type = request.form.get("soil_type", user.get("soil_type", "Black Cotton Soil"))
 
-        db_user = database.save_user(
-            email=email,
+        db_user = database.update_user_profile(
+            user_id=user_id,
             name=name,
-            auth_type=user.get("auth_type", "email"),
-            language=current_language(),
             state=state,
             district=district,
             land_size=land_size,
             primary_crop=primary_crop,
             soil_type=soil_type,
         )
-        session["user"] = db_user
-        session.modified = True
+        if db_user:
+            session["user"] = db_user
+            session.modified = True
+            user = db_user
 
     ctx = template_context("profile")
-    ctx["crop_progress"] = database.get_crop_progress(user["id"]) if user and user.get("id") else []
+    ctx["crop_progress"] = database.get_crop_progress(user_id) if user_id else []
     return render_template("profile.html", **ctx)
 
 
@@ -575,8 +762,8 @@ def api_auth_google():
     """
     payload = request.get_json(silent=True) or {}
     token = payload.get("credential") or payload.get("id_token")
-    is_prod = os.environ.get("FLASK_ENV") == "production"
-    mock_mode = (not is_prod) and (os.environ.get("ENABLE_DEV_MOCK_AUTH", "0") == "1")
+    is_prod = os.environ.get("FLASK_ENV") == "production" or app.config.get("ENV") == "production"
+    mock_mode = (not is_prod) and ((os.environ.get("ENABLE_DEV_MOCK_AUTH", "0") == "1") or bool(app.config.get("ENABLE_DEV_MOCK_AUTH")))
 
     email = None
     name = None
@@ -591,6 +778,10 @@ def api_auth_google():
             )
             if resp.status_code == 200:
                 id_info = resp.json()
+                expected_client_id = os.environ.get("GOOGLE_CLIENT_ID") or app.config.get("GOOGLE_CLIENT_ID")
+                if expected_client_id and id_info.get("aud") != expected_client_id:
+                    return jsonify({"success": False, "error": "Token audience mismatch"}), 401
+
                 email = (id_info.get("email") or "").strip().lower()
                 name = (id_info.get("name") or "").strip()
                 picture = id_info.get("picture")
@@ -598,7 +789,7 @@ def api_auth_google():
                     return jsonify({"success": False, "error": "Google email not verified"}), 400
             else:
                 return jsonify({"success": False, "error": "Invalid or expired Google token"}), 401
-        except Exception as e:
+        except Exception:
             return jsonify({"success": False, "error": "Unable to verify token with Google auth servers"}), 502
     elif mock_mode:
         # Dev-only mock authentication explicitly enabled

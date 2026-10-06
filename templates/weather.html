@@ -1270,14 +1270,14 @@
                                 </svg>
                             </span>
                             <input type="text" id="locationSearchInput" class="weather-search-input" 
-                                   placeholder="{{ t.search_city_placeholder }}" autocomplete="off">
+                                   placeholder="{{ t.search_city_placeholder }}" aria-label="{{ t.search_city_placeholder }}" autocomplete="off">
                             <div id="searchResultsDropdown" class="search-results-dropdown" style="display: none;"></div>
                         </div>
                     </div>
  
                     <!-- District Selection Dropdown -->
                     <div class="toolbar-select-col">
-                        <select id="districtSelect" class="district-select-custom" onchange="if(this.value) window.location.href='/weather?city='+this.value">
+                        <select id="districtSelect" class="district-select-custom" aria-label="{{ t.search_district_label }}" onchange="if(this.value) window.location.href='/weather?city='+this.value">
                             <option value="">-- {{ t.search_district_label }} --</option>
                             {% for d_key, d_info in popular_locations.items() %}
                                 <option value="{{ d_key }}" {% if selected_city == d_key %}selected{% endif %}>
@@ -1753,20 +1753,39 @@
                     fetch(`/api/search-locations?q=${encodeURIComponent(query)}`)
                         .then(r => r.json())
                         .then(data => {
+                            resultsDropdown.textContent = '';
                             if (data.results && data.results.length > 0) {
-                                resultsDropdown.innerHTML = '';
                                 data.results.forEach(loc => {
                                     const item = document.createElement('div');
                                     item.className = 'search-result-item';
-                                    item.innerHTML = `<strong>${loc.name}</strong> <span class="text-muted small">${loc.state ? loc.state + ', ' : ''}${loc.country}</span>`;
+
+                                    const strong = document.createElement('strong');
+                                    strong.textContent = loc.name || '';
+                                    item.appendChild(strong);
+
+                                    const subText = (loc.state ? loc.state + ', ' : '') + (loc.country || '');
+                                    if (subText) {
+                                        item.appendChild(document.createTextNode(' '));
+                                        const span = document.createElement('span');
+                                        span.className = 'text-muted small';
+                                        span.textContent = subText;
+                                        item.appendChild(span);
+                                    }
+
                                     item.onclick = function() {
-                                        window.location.href = `/weather?lat=${loc.lat}&lon=${loc.lon}&name=${encodeURIComponent(loc.name)}`;
+                                        const lat = encodeURIComponent(loc.lat !== undefined && loc.lat !== null ? loc.lat : '');
+                                        const lon = encodeURIComponent(loc.lon !== undefined && loc.lon !== null ? loc.lon : '');
+                                        const name = encodeURIComponent(loc.name || '');
+                                        window.location.href = `/weather?lat=${lat}&lon=${lon}&name=${name}`;
                                     };
                                     resultsDropdown.appendChild(item);
                                 });
                                 resultsDropdown.style.display = 'block';
                             } else {
-                                resultsDropdown.innerHTML = '<div class="p-2 text-muted small">No locations found. Try typing district name.</div>';
+                                const emptyMsg = document.createElement('div');
+                                emptyMsg.className = 'p-2 text-muted small';
+                                emptyMsg.textContent = 'No locations found. Try typing district name.';
+                                resultsDropdown.appendChild(emptyMsg);
                                 resultsDropdown.style.display = 'block';
                             }
                         })
