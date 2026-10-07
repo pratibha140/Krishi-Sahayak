@@ -204,7 +204,7 @@ def search_locations(query):
 def reverse_geocode(lat, lon):
     """
     Convert lat/lon coordinates to a human-readable location name using
-    OpenStreetMap Nominatim reverse geocoding API (free, no key required).
+    OpenStreetMap Nominatim reverse geocoding API with BigDataCloud fallback.
     Returns a string like "Pune, Maharashtra" or "Lat X, Lon Y" as fallback.
     """
     try:
@@ -219,6 +219,7 @@ def reverse_geocode(lat, lon):
     if cached_val is not None and not is_expired:
         return cached_val
 
+    # 1. Primary provider: OpenStreetMap Nominatim
     try:
         url = (
             f"https://nominatim.openstreetmap.org/reverse"
@@ -244,13 +245,44 @@ def reverse_geocode(lat, lon):
             res = ", ".join(parts)
             _REVERSE_GEO_CACHE.set(cache_key, res)
             return res
-        fallback = f"Lat {lat_f:.2f}, Lon {lon_f:.2f}"
-        _REVERSE_GEO_CACHE.set(cache_key, fallback)
-        return fallback
     except Exception:
-        if cached_val is not None:
-            return cached_val
-    return f"Lat {lat_f:.2f}, Lon {lon_f:.2f}"
+        pass
+
+    # 2. Resilient fallback provider: BigDataCloud Reverse Geocoding Client API
+    # Keyless, unmetered, cloud-friendly endpoint that works reliably in server environments
+    try:
+        bdc_url = (
+            f"https://api.bigdatacloud.net/data/reverse-geocode-client"
+            f"?latitude={lat_f}&longitude={lon_f}&localityLanguage=en"
+        )
+        bdc_resp = requests.get(bdc_url, timeout=5)
+        bdc_resp.raise_for_status()
+        bdc_data = bdc_resp.json()
+        city = (
+            bdc_data.get("city")
+            or bdc_data.get("locality")
+            or ""
+        )
+        state = bdc_data.get("principalSubdivision", "")
+        if not city and bdc_data.get("localityInfo"):
+            for admin in bdc_data.get("localityInfo", {}).get("administrative", []):
+                admin_name = admin.get("name", "")
+                if admin_name and admin_name not in ["India", state]:
+                    city = admin_name
+                    break
+        parts = [p for p in [city, state] if p]
+        if parts:
+            res = ", ".join(parts)
+            _REVERSE_GEO_CACHE.set(cache_key, res)
+            return res
+    except Exception:
+        pass
+
+    if cached_val is not None:
+        return cached_val
+    fallback = f"Lat {lat_f:.2f}, Lon {lon_f:.2f}"
+    _REVERSE_GEO_CACHE.set(cache_key, fallback)
+    return fallback
 
 
 def calculate_agri_advisory(temp, humidity, wind_speed, rain_prob, current_rain, lang="en"):

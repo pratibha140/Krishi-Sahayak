@@ -1057,6 +1057,91 @@ print(",".join(tables))
             self.assertEqual(len(res1), 1)
             self.assertEqual(res1[0]["name"], res2[0]["name"])
 
+    def test_reverse_geocode_nominatim_success(self):
+        """Verify reverse_geocode returns primary Nominatim result when available."""
+        clear_weather_caches()
+        with patch("requests.get") as mock_get:
+            mock_resp = MagicMock()
+            mock_resp.json.return_value = {"address": {"city": "Nashik", "state": "Maharashtra"}}
+            mock_resp.raise_for_status = MagicMock()
+            mock_get.return_value = mock_resp
+
+            name = reverse_geocode(19.9975, 73.7898)
+            self.assertEqual(name, "Nashik, Maharashtra")
+            self.assertEqual(mock_get.call_count, 1)
+
+    def test_reverse_geocode_nominatim_failure_bigdatacloud_success(self):
+        """Verify reverse_geocode falls back to BigDataCloud when Nominatim fails (e.g. cloud host 403)."""
+        clear_weather_caches()
+        import requests as req
+
+        def mock_requests_get(url, *args, **kwargs):
+            if "nominatim.openstreetmap.org" in url:
+                # Simulate Nominatim blocking Render/cloud IP with HTTP 403
+                bad_resp = MagicMock()
+                bad_resp.raise_for_status.side_effect = req.exceptions.HTTPError("403 Client Error: Forbidden")
+                return bad_resp
+            elif "api.bigdatacloud.net" in url:
+                # BigDataCloud responds with city and state
+                good_resp = MagicMock()
+                good_resp.raise_for_status = MagicMock()
+                good_resp.json.return_value = {
+                    "city": "Thane",
+                    "locality": "Thane",
+                    "principalSubdivision": "Maharashtra",
+                    "countryName": "India"
+                }
+                return good_resp
+            raise ValueError(f"Unexpected URL: {url}")
+
+        with patch("requests.get", side_effect=mock_requests_get):
+            name = reverse_geocode(19.21, 72.96)
+            self.assertEqual(name, "Thane, Maharashtra")
+
+    def test_reverse_geocode_both_providers_fail_coordinate_fallback(self):
+        """Verify reverse_geocode safely returns coordinates format when both providers fail."""
+        clear_weather_caches()
+        with patch("requests.get", side_effect=Exception("Network Unreachable")):
+            name = reverse_geocode(19.21, 72.96)
+            self.assertEqual(name, "Lat 19.21, Lon 72.96")
+
+    def test_reverse_geocode_fallback_caching(self):
+        """Verify BigDataCloud reverse geocode result is cached on subsequent lookups."""
+        clear_weather_caches()
+        import requests as req
+
+        call_counts = {"nominatim": 0, "bigdatacloud": 0}
+
+        def mock_requests_get(url, *args, **kwargs):
+            if "nominatim.openstreetmap.org" in url:
+                call_counts["nominatim"] += 1
+                bad_resp = MagicMock()
+                bad_resp.raise_for_status.side_effect = req.exceptions.HTTPError("403 Forbidden")
+                return bad_resp
+            elif "api.bigdatacloud.net" in url:
+                call_counts["bigdatacloud"] += 1
+                good_resp = MagicMock()
+                good_resp.raise_for_status = MagicMock()
+                good_resp.json.return_value = {
+                    "city": "Thane",
+                    "principalSubdivision": "Maharashtra"
+                }
+                return good_resp
+            raise ValueError(f"Unexpected URL: {url}")
+
+        with patch("requests.get", side_effect=mock_requests_get):
+            # First call triggers Nominatim failure -> BigDataCloud success
+            name1 = reverse_geocode(19.21, 72.96)
+            self.assertEqual(name1, "Thane, Maharashtra")
+            self.assertEqual(call_counts["nominatim"], 1)
+            self.assertEqual(call_counts["bigdatacloud"], 1)
+
+            # Second call (same coordinates) must be served from cache
+            name2 = reverse_geocode(19.21, 72.96)
+            self.assertEqual(name2, "Thane, Maharashtra")
+            self.assertEqual(call_counts["nominatim"], 1)
+            self.assertEqual(call_counts["bigdatacloud"], 1)
+
     def test_be03_cache_bounds_and_deterministic_eviction(self):
         """BE-03: Verify cache size cannot exceed maxsize and oldest entries are deterministically evicted."""
         clear_weather_caches()
