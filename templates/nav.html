@@ -241,12 +241,22 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Global Navbar Hide/Show on Scroll (12px threshold to prevent flicker)
         const navbarWrapper = document.querySelector('.navbar-wrapper');
+        const toggle = document.getElementById('mobileMenuToggle');
+        const nav = document.getElementById('navLinks');
         let lastScrollY = window.pageYOffset || document.documentElement.scrollTop;
         let scrollDelta = 0;
         const scrollThreshold = 12; // 10-15px threshold
 
         window.addEventListener('scroll', function() {
             const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+            // When mobile menu is intentionally open, keep navbar and menu options visible.
+            // Do NOT hide on scroll and do NOT auto-close on scroll.
+            if (nav && nav.classList.contains('open')) {
+                if (navbarWrapper) navbarWrapper.classList.remove('nav-hidden');
+                lastScrollY = currentScrollY;
+                return;
+            }
 
             // Always show navbar near top of page (within 20px)
             if (currentScrollY <= 20) {
@@ -277,14 +287,34 @@
         }, { passive: true });
 
         // Mobile navigation toggle
-        const toggle = document.getElementById('mobileMenuToggle');
-        const nav = document.getElementById('navLinks');
         if (toggle && nav) {
+            // Ensure clean closed initial state
+            nav.classList.remove('open');
+            toggle.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+
             toggle.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const isOpen = nav.classList.toggle('open');
-                toggle.classList.toggle('open');
+                toggle.classList.toggle('open', isOpen);
                 toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                if (navbarWrapper) navbarWrapper.classList.remove('nav-hidden');
+            });
+
+            // Prevent clicks inside the menu container itself from closing the menu
+            nav.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // Auto-close mobile menu when navigating
+            nav.querySelectorAll('.nav-item:not(.nav-dropdown-btn), .nav-dropdown-item, .lang-option, .btn-auth-signin, .user-menu-item').forEach(function(item) {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth <= 1220) {
+                        nav.classList.remove('open');
+                        toggle.classList.remove('open');
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
             });
         }
 
@@ -330,8 +360,15 @@
             });
         }
 
-        // Close all dropdowns when clicking outside
+        // Close all dropdowns and mobile menu when clicking outside
         document.addEventListener('click', function(e) {
+            if (toggle && nav && nav.classList.contains('open')) {
+                if (!nav.contains(e.target) && !toggle.contains(e.target)) {
+                    nav.classList.remove('open');
+                    toggle.classList.remove('open');
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+            }
             if (toolsBtn && toolsMenu && !toolsBtn.contains(e.target) && !toolsMenu.contains(e.target)) {
                 toolsMenu.classList.remove('show');
                 toolsBtn.setAttribute('aria-expanded', 'false');
@@ -346,9 +383,17 @@
             }
         });
 
-        // Close dropdowns on Escape key press and return focus to trigger
+        // Close dropdowns and mobile menu on Escape key press and return focus to trigger
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                if (nav && nav.classList.contains('open')) {
+                    nav.classList.remove('open');
+                    if (toggle) {
+                        toggle.classList.remove('open');
+                        toggle.setAttribute('aria-expanded', 'false');
+                        toggle.focus();
+                    }
+                }
                 if (toolsBtn && toolsMenu && toolsMenu.classList.contains('show')) {
                     toolsMenu.classList.remove('show');
                     toolsBtn.setAttribute('aria-expanded', 'false');

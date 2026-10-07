@@ -1241,6 +1241,21 @@ print(",".join(tables))
             self.assertIn('aria-expanded="false"', html)
             self.assertIn('aria-controls="navLinks"', html)
 
+    def test_a11y02b_mobile_navbar_closed_by_default_and_toggle_rules(self):
+        """Verify mobile navigation links are hidden by default in CSS and desktop rules do not bleed into mobile."""
+        import os
+        css_path = os.path.join(app.root_path, "static", "style.css")
+        with open(css_path, "r", encoding="utf-8") as f:
+            css_content = f.read()
+
+        # 1. Under @media (max-width: 1220px), mobile menu links are hidden by default with high specificity
+        self.assertIn(".navbar .nav-links,\n    .navbar-wrapper .nav-links,\n    .nav-links {\n        display: none !important;", css_content)
+        # 2. When open, mobile menu links are flex
+        self.assertIn(".navbar .nav-links.open,\n    .navbar-wrapper .nav-links.open,\n    .nav-links.open {\n        display: flex !important;", css_content)
+        # 3. Desktop navbar refinements are strictly scoped inside @media (min-width: 1221px)
+        self.assertIn("@media (min-width: 1221px) {\n    .navbar .nav-links {", css_content)
+        self.assertIn("@media (min-width: 1221px) {\n    .navbar-wrapper .nav-links {", css_content)
+
     def test_a11y03_dropdown_escape_key_listener(self):
         """A11Y-03: Verify Escape keydown listener closes open dropdowns, updates aria-expanded, and restores focus.
         (Note: Source-level template and rendered-page verification)."""

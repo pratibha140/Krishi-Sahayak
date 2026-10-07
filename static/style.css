@@ -588,7 +588,21 @@ button, input, select, textarea {
     height: 2.5px;
     background: #ffffff;
     border-radius: 2px;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}
+
+.mobile-menu-toggle.open span:nth-child(1) {
+    transform: translateY(7.5px) rotate(45deg);
+}
+
+.mobile-menu-toggle.open span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.mobile-menu-toggle.open span:nth-child(3) {
+    transform: translateY(-7.5px) rotate(-45deg);
 }
 
 /* ==========================================================================
@@ -3048,58 +3062,295 @@ button, input, select, textarea {
 }
 
 @media (max-width: 1220px) {
+    .navbar {
+        position: relative !important;
+        overflow: visible !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(6, 18, 9, 0.96) !important;
+    }
+
+    .navbar-wrapper {
+        overflow: visible !important;
+    }
+
     .mobile-menu-toggle {
-        display: flex;
+        display: flex !important;
     }
 
+    .navbar .nav-links,
+    .navbar-wrapper .nav-links,
     .nav-links {
-        display: none;
-        position: fixed;
-        top: 76px;
-        left: 16px;
-        right: 16px;
-        background: rgba(10, 24, 14, 0.96);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 24px;
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-        flex-direction: column;
-        align-items: stretch;
-        padding: 20px;
-        gap: 8px;
-        max-height: calc(100vh - 100px);
-        overflow-y: auto;
-        z-index: 1001;
+        display: none !important;
+        position: fixed !important;
+        top: 76px !important;
+        left: 14px !important;
+        right: 14px !important;
+        background: rgba(8, 22, 12, 0.98) !important;
+        backdrop-filter: blur(28px) !important;
+        -webkit-backdrop-filter: blur(28px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 16px 14px !important;
+        gap: 6px !important;
+        max-height: calc(100vh - 96px) !important;
+        max-height: calc(100svh - 96px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        z-index: 10001 !important;
+        box-sizing: border-box !important;
     }
 
+    .navbar .nav-links.open,
+    .navbar-wrapper .nav-links.open,
     .nav-links.open {
-        display: flex;
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
         animation: dropdownSlide 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
 
-    .nav-item {
-        padding: 10px 14px;
-        border-radius: 12px;
-        font-size: 0.92rem;
+    .navbar .nav-links .nav-item,
+    .navbar-wrapper .nav-links .nav-item,
+    .nav-links .nav-item {
+        display: flex !important;
+        width: 100% !important;
+        min-height: 44px !important;
+        height: auto !important;
+        padding: 11px 14px !important;
+        border-radius: 12px !important;
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        color: #ffffff !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 12px !important;
+        box-sizing: border-box !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        text-decoration: none !important;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+        line-height: 1.3 !important;
     }
 
-    .lang-dropdown {
-        margin-left: 0;
-        margin-top: 10px;
+    .nav-links .nav-item:hover,
+    .nav-links .nav-item:focus,
+    .nav-links .nav-item:active {
+        background: rgba(255, 255, 255, 0.12) !important;
+        border-color: rgba(74, 222, 128, 0.35) !important;
+        color: #ffffff !important;
     }
 
-    .lang-btn {
-        width: 100%;
-        justify-content: center;
-        padding: 10px;
+    .nav-links .nav-item.active {
+        background: rgba(34, 197, 94, 0.22) !important;
+        border-color: rgba(74, 222, 128, 0.5) !important;
+        color: #4ade80 !important;
+        font-weight: 700 !important;
     }
 
-    .lang-menu {
-        position: static;
-        width: 100%;
-        margin-top: 6px;
-        background: rgba(16, 36, 20, 0.9);
+    .nav-links .nav-item span {
+        display: inline-block !important;
+        color: inherit !important;
+        font-size: inherit !important;
+        line-height: inherit !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    .nav-links .nav-item .nav-svg {
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        max-height: 18px !important;
+        stroke: currentColor !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        flex-shrink: 0 !important;
+    }
+
+    .nav-links .nav-item.nav-voice-highlight {
+        background: rgba(34, 197, 94, 0.14) !important;
+        border: 1px solid rgba(74, 222, 128, 0.4) !important;
+        color: #4ade80 !important;
+    }
+
+    .nav-links .nav-item.nav-voice-highlight:hover,
+    .nav-links .nav-item.nav-voice-highlight.active {
+        background: rgba(34, 197, 94, 0.25) !important;
+        border-color: rgba(74, 222, 128, 0.6) !important;
+        color: #ffffff !important;
+    }
+
+    .nav-links .nav-dropdown {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        position: static !important;
+    }
+
+    .nav-links .nav-dropdown-btn {
+        width: 100% !important;
+        justify-content: space-between !important;
+        cursor: pointer !important;
+    }
+
+    .nav-links .nav-dropdown-btn .lang-caret-svg {
+        margin-left: auto !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        flex-shrink: 0 !important;
+    }
+
+    .nav-links .nav-dropdown-menu {
+        position: static !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        background: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        margin-top: 4px !important;
+        padding: 4px !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+    }
+
+    .nav-links .nav-dropdown-item {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 10px 14px !important;
+        min-height: 44px !important;
+        height: auto !important;
+        border-radius: 8px !important;
+        color: #d1fae5 !important;
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+        text-decoration: none !important;
+        transition: background 0.15s ease, color 0.15s ease !important;
+    }
+
+    .nav-links .nav-dropdown-item:hover,
+    .nav-links .nav-dropdown-item.active {
+        background: rgba(34, 197, 94, 0.2) !important;
+        color: #ffffff !important;
+    }
+
+    .nav-links .lang-dropdown {
+        width: 100% !important;
+        margin: 4px 0 0 0 !important;
+        position: static !important;
+    }
+
+    .nav-links .lang-btn {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 11px 14px !important;
+        min-height: 44px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        color: #ffffff !important;
+        font-size: 0.95rem !important;
+        box-sizing: border-box !important;
+    }
+
+    .nav-links .lang-btn:hover {
+        background: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    .nav-links .lang-menu {
+        position: static !important;
+        width: 100% !important;
+        background: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        margin-top: 4px !important;
+        padding: 4px !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+    }
+
+    .nav-links .lang-option {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 10px 14px !important;
+        min-height: 40px !important;
+        border-radius: 8px !important;
+        color: #d1fae5 !important;
+        font-size: 0.9rem !important;
+        text-decoration: none !important;
+    }
+
+    .nav-links .lang-option:hover,
+    .nav-links .lang-option.selected {
+        background: rgba(34, 197, 94, 0.2) !important;
+        color: #ffffff !important;
+    }
+
+    .nav-links .user-auth-wrap {
+        width: 100% !important;
+        margin: 6px 0 0 0 !important;
+        display: flex !important;
+    }
+
+    .nav-links .btn-auth-signin {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 12px 16px !important;
+        min-height: 44px !important;
+        height: auto !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-radius: 12px !important;
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        box-sizing: border-box !important;
+        text-decoration: none !important;
+    }
+
+    .nav-links .btn-auth-signin:hover {
+        background: #f1f5f9 !important;
+        color: #15803d !important;
+    }
+
+    .nav-links .user-profile-dropdown {
+        width: 100% !important;
+        position: static !important;
+    }
+
+    .nav-links .user-profile-badge {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 10px 14px !important;
+        min-height: 44px !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        color: #ffffff !important;
+        box-sizing: border-box !important;
+    }
+
+    .nav-links .user-profile-menu {
+        position: static !important;
+        width: 100% !important;
+        background: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        margin-top: 4px !important;
+        padding: 4px !important;
+        box-sizing: border-box !important;
     }
 
     .weather-stats-quad {
@@ -7745,10 +7996,12 @@ html[lang="mr"] .hero-desc {
 }
 
 /* ── 5. HEADER & NAVIGATION BAR REFINEMENTS ── */
-.navbar .nav-links {
-    display: flex !important;
-    align-items: center !important;
-    gap: 6px !important;
+@media (min-width: 1221px) {
+    .navbar .nav-links {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
 }
 
 .navbar .nav-item {
@@ -9277,10 +9530,12 @@ html[lang="mr"] .hero-desc {
    ========================================================================== */
 
 /* 1. Navbar Items & Global Option Alignment */
-.navbar-wrapper .nav-links {
-    display: flex !important;
-    align-items: center !important;
-    gap: 4px !important;
+@media (min-width: 1221px) {
+    .navbar-wrapper .nav-links {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
 }
 
 .nav-item {
