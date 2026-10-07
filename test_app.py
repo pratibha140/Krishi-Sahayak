@@ -859,22 +859,12 @@ class KrishiSahayakTestCase(unittest.TestCase):
         self.assertEqual(res_reg.status_code, 200)
         self.assertIn("Registration successful!", res_reg.get_data(as_text=True))
 
-        # Check DB
+        # Check DB - account is active and verified
         user = database.get_user_by_email(new_email)
         self.assertIsNotNone(user)
-        self.assertEqual(user['is_verified'], 0)
-        token = user['verification_token']
-        self.assertTrue(token)
+        self.assertEqual(user['is_verified'], 1)
 
-        # Click verification link
-        res_verify = self.client.get(f'/verify-email/{token}', follow_redirects=False)
-        self.assertEqual(res_verify.status_code, 302)
-        self.assertIn('/login?verified=1', res_verify.location)
-
-        user_verified = database.get_user_by_email(new_email)
-        self.assertEqual(user_verified['is_verified'], 1)
-
-        # Legitimate login with new credentials
+        # Legitimate login with new credentials succeeds immediately
         res_login = self.client.post('/login', data={
             'action': 'login',
             'email': new_email,
@@ -2467,43 +2457,33 @@ class ProductionEmailVerificationSecurityTestCase(unittest.TestCase):
             conn.commit()
             conn.close()
 
-    def test_p11_test1_successful_registration_and_email_delivery(self):
-        """TEST 1: Successful registration triggers verification email, keeps user unverified until link clicked."""
-        app.config['MAIL_SERVER'] = 'smtp.fake-relay.example.com'
-        app.config['MAIL_PORT'] = 587
+    def test_p11_test1_successful_registration_and_immediate_login(self):
+        """TEST 1: Successful registration creates active account with password hash, allowing immediate login."""
+        res = self.client.post('/login', data={
+            'action': 'register',
+            'name': 'Test Farmer One',
+            'email': self.test_email,
+            'password': 'StrongPassword123!',
+            'confirm_password': 'StrongPassword123!'
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Registration successful!", res.get_data(as_text=True))
 
-        with patch('app.send_verification_email', return_value=(True, None)) as mock_send:
-            res = self.client.post('/login', data={
-                'action': 'register',
-                'name': 'Test Farmer One',
-                'email': self.test_email,
-                'password': 'StrongPassword123!',
-                'confirm_password': 'StrongPassword123!'
-            })
-            self.assertEqual(res.status_code, 200)
-            self.assertIn("Registration successful!", res.get_data(as_text=True))
-            mock_send.assert_called_once()
-            args, kwargs = mock_send.call_args
-            self.assertEqual(args[0], self.test_email)
-            self.assertIn('/verify-email/', args[2])
+        user = database.get_user_by_email(self.test_email)
+        self.assertIsNotNone(user)
+        self.created_user_ids.append(user['id'])
+        self.assertEqual(user['is_verified'], 1)
 
-            user = database.get_user_by_email(self.test_email)
-            self.assertIsNotNone(user)
-            self.created_user_ids.append(user['id'])
-            self.assertEqual(user['is_verified'], 0)
-            token = user['verification_token']
-            self.assertTrue(token)
+        # Immediate login succeeds
+        res_login = self.client.post('/login', data={
+            'action': 'login',
+            'email': self.test_email,
+            'password': 'StrongPassword123!'
+        }, follow_redirects=False)
+        self.assertEqual(res_login.status_code, 302)
 
-            # Verification flow works
-            res_ver = self.client.get(f'/verify-email/{token}', follow_redirects=False)
-            self.assertEqual(res_ver.status_code, 302)
-            self.assertIn('verified=1', res_ver.location)
-
-            user_verified = database.get_user_by_id(user['id'])
-            self.assertEqual(user_verified['is_verified'], 1)
-
-    def test_p11_test2_missing_production_email_configuration(self):
-        """TEST 2: Missing email configuration in production safely blocks registration without false success."""
+    def test_p11_test2_production_registration_succeeds_without_smtp(self):
+        """TEST 2: Registration in production succeeds independently of SMTP configuration."""
         app.config['MAIL_SERVER'] = ''
         old_env = os.environ.get('FLASK_ENV')
         os.environ['FLASK_ENV'] = 'production'
@@ -2516,49 +2496,39 @@ class ProductionEmailVerificationSecurityTestCase(unittest.TestCase):
                 'confirm_password': 'StrongPassword123!'
             })
             self.assertEqual(res.status_code, 200)
-            html = res.get_data(as_text=True)
-            self.assertNotIn("Registration successful!", html)
-            self.assertIn("email delivery is not configured", html)
+            self.assertIn("Registration successful!", res.get_data(as_text=True))
 
-            # User must NOT be created or verified
             user = database.get_user_by_email(self.test_email)
-            self.assertIsNone(user)
-
-            # No authentication bypass
-            with self.client.session_transaction() as sess:
-                self.assertNotIn('user', sess)
+            self.assertIsNotNone(user)
+            self.created_user_ids.append(user['id'])
+            self.assertEqual(user['is_verified'], 1)
         finally:
             if old_env is not None:
                 os.environ['FLASK_ENV'] = old_env
             else:
                 os.environ.pop('FLASK_ENV', None)
 
-    def test_p11_test3_email_provider_failure(self):
-        """TEST 3: Email delivery failure preserves unverified state, does not authenticate, returns safe error."""
-        app.config['MAIL_SERVER'] = 'smtp.fake-relay.example.com'
+    def test_p11_test3_direct_login_works_without_verification_link(self):
+        """TEST 3: Direct login works immediately without needing email verification link."""
+        res_reg = self.client.post('/login', data={
+            'action': 'register',
+            'name': 'Direct Farmer',
+            'email': self.test_email,
+            'password': 'StrongPassword123!',
+            'confirm_password': 'StrongPassword123!'
+        })
+        self.assertEqual(res_reg.status_code, 200)
 
-        with patch('app.send_verification_email', return_value=(False, 'SMTPConnectError')) as mock_send:
-            res = self.client.post('/login', data={
-                'action': 'register',
-                'name': 'Failing Farmer',
-                'email': self.test_email,
-                'password': 'StrongPassword123!',
-                'confirm_password': 'StrongPassword123!'
-            })
-            self.assertEqual(res.status_code, 200)
-            html = res.get_data(as_text=True)
-            self.assertIn("could not deliver the verification email", html)
-            self.assertIn("resend", html)
+        user = database.get_user_by_email(self.test_email)
+        self.created_user_ids.append(user['id'])
 
-            # User is in DB but remains unverified
-            user = database.get_user_by_email(self.test_email)
-            self.assertIsNotNone(user)
-            self.created_user_ids.append(user['id'])
-            self.assertEqual(user['is_verified'], 0)
-
-            # No session / auth bypass
-            with self.client.session_transaction() as sess:
-                self.assertNotIn('user', sess)
+        # User logs in directly
+        res_login = self.client.post('/login', data={
+            'action': 'login',
+            'email': self.test_email,
+            'password': 'StrongPassword123!'
+        }, follow_redirects=False)
+        self.assertEqual(res_login.status_code, 302)
 
     def test_p11_test4_verification_valid_token(self):
         """TEST 4: Using valid token successfully activates account and allows normal login."""
@@ -3045,6 +3015,404 @@ class GitignoreSecurityTestCase(unittest.TestCase):
         self.assertIn('*.bak', lines)
         self.assertIn('*.backup', lines)
         self.assertIn('*.sqlite', lines)
+
+
+class DirectAuthenticationFlowTestCase(unittest.TestCase):
+    def setUp(self):
+        app.config['TESTING'] = True
+        app.config['SECRET_KEY'] = 'test-secret-key-direct-auth'
+        clear_rate_limits()
+        self.client = app.test_client()
+        self.created_emails = []
+
+    def tearDown(self):
+        clear_rate_limits()
+        if self.created_emails:
+            conn = database.get_db_connection()
+            placeholders = ",".join("?" for _ in self.created_emails)
+            conn.execute(f"DELETE FROM users WHERE email IN ({placeholders})", tuple(self.created_emails))
+            conn.commit()
+            conn.close()
+
+    def test_01_registration_creates_user_with_secure_password_hash(self):
+        """1. Registration creates user with secure password hash."""
+        email = f"auth_test1_{secrets.token_hex(4)}@example.com"
+        password = "SecurePassword123!"
+        self.created_emails.append(email)
+
+        res = self.client.post('/login', data={
+            'action': 'register',
+            'name': 'Test Farmer',
+            'email': email,
+            'password': password,
+            'confirm_password': password
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Registration successful!", res.get_data(as_text=True))
+
+        user = database.get_user_by_email(email)
+        self.assertIsNotNone(user)
+        self.assertIsNotNone(user.get("password_hash"))
+        self.assertNotEqual(user["password_hash"], password)
+        self.assertTrue(user["password_hash"].startswith("pbkdf2:sha256:"))
+
+    def test_02_newly_registered_user_can_immediately_login(self):
+        """2. Newly registered user can immediately log in with correct password."""
+        email = f"auth_test2_{secrets.token_hex(4)}@example.com"
+        password = "SecurePassword123!"
+        self.created_emails.append(email)
+
+        # Register
+        self.client.post('/login', data={
+            'action': 'register',
+            'name': 'Immediate Login Farmer',
+            'email': email,
+            'password': password,
+            'confirm_password': password
+        })
+
+        # Immediately login
+        res_login = self.client.post('/login', data={
+            'action': 'login',
+            'email': email,
+            'password': password
+        }, follow_redirects=False)
+        self.assertEqual(res_login.status_code, 302)
+        with self.client.session_transaction() as sess:
+            self.assertIsNotNone(sess.get('user'))
+            self.assertEqual(sess['user']['email'], email)
+
+    def test_03_newly_registered_user_not_blocked_by_email_verification(self):
+        """3. Newly registered user is NOT blocked by email verification."""
+        email = f"auth_test3_{secrets.token_hex(4)}@example.com"
+        password = "SecurePassword123!"
+        self.created_emails.append(email)
+
+        self.client.post('/login', data={
+            'action': 'register',
+            'name': 'Unblocked Farmer',
+            'email': email,
+            'password': password,
+            'confirm_password': password
+        })
+
+        user = database.get_user_by_email(email)
+        self.assertEqual(user.get("is_verified"), 1)
+
+        res_login = self.client.post('/login', data={
+            'action': 'login',
+            'email': email,
+            'password': password
+        })
+        self.assertNotIn("Your account is not verified yet", res_login.get_data(as_text=True))
+
+    def test_04_correct_password_succeeds(self):
+        """4. Correct password succeeds."""
+        email = f"auth_test4_{secrets.token_hex(4)}@example.com"
+        password = "CorrectPassword123!"
+        self.created_emails.append(email)
+
+        database.create_user_with_password(
+            email=email,
+            name="Correct Password Farmer",
+            password_hash=generate_password_hash(password, method="pbkdf2:sha256"),
+            is_verified=1
+        )
+
+        res = self.client.post('/login', data={
+            'action': 'login',
+            'email': email,
+            'password': password
+        }, follow_redirects=False)
+        self.assertEqual(res.status_code, 302)
+
+    def test_05_wrong_password_fails(self):
+        """5. Wrong password fails."""
+        email = f"auth_test5_{secrets.token_hex(4)}@example.com"
+        password = "CorrectPassword123!"
+        self.created_emails.append(email)
+
+        database.create_user_with_password(
+            email=email,
+            name="Wrong Password Farmer",
+            password_hash=generate_password_hash(password, method="pbkdf2:sha256"),
+            is_verified=1
+        )
+
+        res = self.client.post('/login', data={
+            'action': 'login',
+            'email': email,
+            'password': 'WrongPassword123!'
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Invalid email or password. Please check your credentials.", res.get_data(as_text=True))
+        with self.client.session_transaction() as sess:
+            self.assertNotIn('user', sess)
+
+    def test_06_empty_password_fails(self):
+        """6. Empty password fails."""
+        email = f"auth_test6_{secrets.token_hex(4)}@example.com"
+        self.created_emails.append(email)
+
+        database.create_user_with_password(
+            email=email,
+            name="Empty Password Farmer",
+            password_hash=generate_password_hash("ValidPass123!", method="pbkdf2:sha256"),
+            is_verified=1
+        )
+
+        res = self.client.post('/login', data={
+            'action': 'login',
+            'email': email,
+            'password': ''
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Invalid email or password. Please check your credentials.", res.get_data(as_text=True))
+        with self.client.session_transaction() as sess:
+            self.assertNotIn('user', sess)
+
+    def test_07_missing_password_fails(self):
+        """7. Missing password fails."""
+        email = f"auth_test7_{secrets.token_hex(4)}@example.com"
+        self.created_emails.append(email)
+
+        database.create_user_with_password(
+            email=email,
+            name="Missing Password Farmer",
+            password_hash=generate_password_hash("ValidPass123!", method="pbkdf2:sha256"),
+            is_verified=1
+        )
+
+        res = self.client.post('/login', data={
+            'action': 'login',
+            'email': email
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Invalid email or password. Please check your credentials.", res.get_data(as_text=True))
+        with self.client.session_transaction() as sess:
+            self.assertNotIn('user', sess)
+
+    def test_08_non_existent_user_fails(self):
+        """8. Non-existent user fails."""
+        ghost_email = f"ghost_{secrets.token_hex(6)}@example.com"
+        res = self.client.post('/login', data={
+            'action': 'login',
+            'email': ghost_email,
+            'password': 'SomePassword123!'
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("Invalid email or password. Please check your credentials.", res.get_data(as_text=True))
+        with self.client.session_transaction() as sess:
+            self.assertNotIn('user', sess)
+
+    def test_09_email_case_and_whitespace_normalization(self):
+        """9. Email case/whitespace normalization works consistently."""
+        base_email = f"normal_{secrets.token_hex(4)}@example.com"
+        password = "NormalizedPass123!"
+        self.created_emails.append(base_email)
+
+        # Register with mixed casing and leading/trailing whitespace
+        input_email = f"  {base_email.upper()}  "
+        self.client.post('/login', data={
+            'action': 'register',
+            'name': 'Normalizing Farmer',
+            'email': input_email,
+            'password': password,
+            'confirm_password': password
+        })
+
+        # Login with different casing and whitespace
+        login_input = f"  {base_email.capitalize()} "
+        res = self.client.post('/login', data={
+            'action': 'login',
+            'email': login_input,
+            'password': password
+        }, follow_redirects=False)
+        self.assertEqual(res.status_code, 302)
+        with self.client.session_transaction() as sess:
+            self.assertEqual(sess['user']['email'], base_email.lower())
+
+    def test_10_password_is_never_stored_as_plaintext(self):
+        """10. Password is never stored as plaintext."""
+        email = f"plaintext_test_{secrets.token_hex(4)}@example.com"
+        raw_password = "SecretSuperPassword123!"
+        self.created_emails.append(email)
+
+        self.client.post('/login', data={
+            'action': 'register',
+            'name': 'Security Conscious Farmer',
+            'email': email,
+            'password': raw_password,
+            'confirm_password': raw_password
+        })
+
+        user = database.get_user_by_email(email)
+        self.assertNotIn(raw_password, user.get("password_hash"))
+        # Raw query inspection to ensure raw password is not stored anywhere in the row
+        conn = database.get_db_connection()
+        row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        conn.close()
+        for col_val in row:
+            if isinstance(col_val, str):
+                self.assertNotIn(raw_password, col_val)
+
+    def test_11_login_creates_correct_authenticated_session(self):
+        """11. Login creates correct authenticated session."""
+        email = f"auth_sess_{secrets.token_hex(4)}@example.com"
+        password = "SessionPassword123!"
+        self.created_emails.append(email)
+
+        database.create_user_with_password(
+            email=email,
+            name="Session Farmer",
+            password_hash=generate_password_hash(password, method="pbkdf2:sha256"),
+            is_verified=1
+        )
+
+        res = self.client.post('/login', data={
+            'action': 'login',
+            'email': email,
+            'password': password
+        }, follow_redirects=False)
+        self.assertEqual(res.status_code, 302)
+
+        with self.client.session_transaction() as sess:
+            self.assertIn('user', sess)
+            self.assertEqual(sess['user']['email'], email)
+            self.assertEqual(sess['user']['name'], "Session Farmer")
+            self.assertIn('language', sess)
+
+    def test_12_auth_bypass_regression_name_email_empty_password_must_not_authenticate(self):
+        """12. Authentication bypass regression: existing user + email/name + empty password MUST NOT authenticate."""
+        target_email = f"bypass_target_{secrets.token_hex(4)}@example.com"
+        self.created_emails.append(target_email)
+
+        database.create_user_with_password(
+            email=target_email,
+            name="Target Farmer",
+            password_hash=generate_password_hash("SecretTargetPass123!"),
+            is_verified=1
+        )
+
+        app.config['TESTING'] = False
+        try:
+            csrf_token = secrets.token_hex(32)
+            with self.client.session_transaction() as sess:
+                sess['_csrf_token'] = csrf_token
+            res = self.client.post('/login', data={
+                'name': 'Target Farmer',
+                'email': target_email,
+                'password': '',
+                'csrf_token': csrf_token
+            })
+            self.assertEqual(res.status_code, 200)
+            self.assertIn("Invalid email or password. Please check your credentials.", res.get_data(as_text=True))
+            with self.client.session_transaction() as sess:
+                self.assertNotIn('user', sess)
+        finally:
+            app.config['TESTING'] = True
+
+    def test_13_profile_idor_regression_remains_protected(self):
+        """13. Profile IDOR regression remains protected."""
+        victim_email = f"victim_{secrets.token_hex(4)}@example.com"
+        attacker_email = f"attacker_{secrets.token_hex(4)}@example.com"
+        self.created_emails.extend([victim_email, attacker_email])
+
+        victim = database.create_user_with_password(
+            email=victim_email,
+            name="Victim Farmer",
+            password_hash=generate_password_hash("VictimPass123!"),
+            is_verified=1
+        )
+        attacker = database.create_user_with_password(
+            email=attacker_email,
+            name="Attacker Farmer",
+            password_hash=generate_password_hash("AttackerPass123!"),
+            is_verified=1
+        )
+
+        # Attacker logs in
+        with self.client.session_transaction() as sess:
+            sess['user'] = attacker
+
+        # Attacker attempts to overwrite victim's profile by submitting victim email
+        res = self.client.post('/profile', data={
+            'name': 'Hacked Name',
+            'email': victim_email,
+            'state': 'Punjab',
+            'district': 'Ludhiana',
+            'location_name': 'Ludhiana, Punjab',
+            'land_size': '15.0',
+            'primary_crop': 'wheat',
+            'soil_type': 'Alluvial Soil'
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+
+        # Victim account must remain completely unchanged
+        victim_check = database.get_user_by_email(victim_email)
+        self.assertEqual(victim_check['name'], "Victim Farmer")
+
+    def test_14_google_production_mock_auth_remains_disabled(self):
+        """14. Google production mock authentication remains disabled."""
+        with patch.dict(os.environ, {'FLASK_ENV': 'production', 'ENABLE_DEV_MOCK_AUTH': '1'}):
+            res = self.client.post('/api/auth/google', json={
+                'name': 'Prod Attacker',
+                'email': 'prod.attacker@example.com'
+            })
+            self.assertEqual(res.status_code, 401)
+            data = res.get_json()
+            self.assertFalse(data.get('success'))
+
+    def test_15_google_id_token_audience_validation_remains_enforced(self):
+        """15. Google ID-token audience validation remains enforced."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "email": "user@gmail.com",
+            "name": "User",
+            "email_verified": True,
+            "aud": "rogue-client-id"
+        }
+        with patch.dict(os.environ, {"GOOGLE_CLIENT_ID": "expected-client-id"}):
+            with patch('requests.get', return_value=mock_response):
+                res = self.client.post('/api/auth/google', json={
+                    'credential': 'fake-token-with-wrong-audience'
+                })
+                self.assertEqual(res.status_code, 401)
+                data = res.get_json()
+                self.assertFalse(data.get('success'))
+
+    def test_16_existing_relevant_authentication_tests_still_pass(self):
+        """16. Existing relevant authentication tests still pass."""
+        test_email = f"lifecycle_{secrets.token_hex(4)}@example.com"
+        test_password = "LifecyclePass123!"
+        self.created_emails.append(test_email)
+
+        # Registration -> Immediate Login -> Access Protected Route -> Logout
+        res_reg = self.client.post('/login', data={
+            'action': 'register',
+            'name': 'Lifecycle Farmer',
+            'email': test_email,
+            'password': test_password,
+            'confirm_password': test_password
+        })
+        self.assertEqual(res_reg.status_code, 200)
+
+        res_login = self.client.post('/login', data={
+            'action': 'login',
+            'email': test_email,
+            'password': test_password
+        }, follow_redirects=True)
+        self.assertEqual(res_login.status_code, 200)
+
+        res_dash = self.client.get('/')
+        self.assertEqual(res_dash.status_code, 200)
+        self.assertIn("Lifecycle Farmer", res_dash.get_data(as_text=True))
+
+        res_logout = self.client.get('/logout', follow_redirects=True)
+        self.assertEqual(res_logout.status_code, 200)
+        with self.client.session_transaction() as sess:
+            self.assertNotIn('user', sess)
 
 
 if __name__ == '__main__':

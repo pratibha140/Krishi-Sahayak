@@ -135,7 +135,7 @@ def get_user_by_email(email):
     return dict(user) if user else None
 
 
-def create_user_with_password(email, name, password_hash, verification_token=None, token_created_at=None, picture=None, auth_type="email", language="en", is_verified=0):
+def create_user_with_password(email, name, password_hash, verification_token=None, token_created_at=None, picture=None, auth_type="email", language="en", is_verified=1):
     email = email.strip().lower()
     name = name.strip()
     picture = picture or f"https://api.dicebear.com/7.x/initials/svg?seed={name}"

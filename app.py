@@ -490,7 +490,7 @@ def login():
         existing_user = database.get_user_by_email(email)
         if existing_user:
             return render_auth_page(
-                alert_msg="If that email is not already registered, a verification link has been sent. If you already have an account, please sign in.",
+                alert_msg="If that email is not already registered, an account has been created. If you already have an account, please sign in.",
                 alert_type="info",
                 mode="login",
                 dev_verify_link=None,
@@ -516,20 +516,7 @@ def login():
                 form_data=form_data
             )
 
-        # Production check: verify that an email delivery provider is configured before accepting registration
-        is_prod = os.environ.get("FLASK_ENV") == "production" or app.config.get("ENV") == "production"
-
-        if is_prod and not is_email_configured():
-            return render_auth_page(
-                alert_msg="Registration is temporarily unavailable because email delivery is not configured. Please contact the administrator or try again later.",
-                alert_type="error",
-                mode="register",
-                form_data=form_data
-            )
-
-        # Create unverified user with secure token
-        token = secrets.token_urlsafe(32)
-        token_created_at = datetime.datetime.utcnow().isoformat()
+        # Create verified user immediately with secure password hash
         password_hash = generate_password_hash(password, method="pbkdf2:sha256")
         farmer_name = name or (email.split("@")[0].capitalize())
 
@@ -537,37 +524,14 @@ def login():
             email=email,
             name=farmer_name,
             password_hash=password_hash,
-            verification_token=token,
-            token_created_at=token_created_at,
-            is_verified=0,
+            is_verified=1,
             language=current_language()
         )
 
-        verify_url = url_for("verify_email", token=token, _external=True)
-
-        # Deliver verification email if provider is configured
-        if is_email_configured():
-            email_sent, _ = send_verification_email(email, farmer_name, verify_url)
-            if not email_sent:
-                # Delivery failed: preserve unverified status in DB, provide safe error, allow resend
-                return render_auth_page(
-                    alert_msg="Your account was registered, but we could not deliver the verification email right now. Please click resend below or try again later.",
-                    alert_type="error",
-                    mode="login",
-                    dev_verify_link=None,
-                    show_resend_email=email,
-                    form_data={"email": email}
-                )
-
-        if not is_prod:
-            print(f"[SECURITY] Email verification link for {email}: {verify_url}", flush=True)
-
         return render_auth_page(
-            alert_msg=f"Registration successful! We have sent a unique verification link to {email}. Accounts remain unverified until you click the link.",
-            alert_type="info",
+            alert_msg="Registration successful! You can now sign in with your credentials.",
+            alert_type="success",
             mode="login",
-            dev_verify_link=None if is_prod else verify_url,
-            show_resend_email=email,
             form_data={"email": email}
         )
 
@@ -588,9 +552,9 @@ def login():
 
     # Validate sign-in inputs
     form_data = {"email": email}
-    if not is_valid_email(email):
+    if not is_valid_email(email) or not password:
         return render_auth_page(
-            alert_msg="Please enter a valid email address.",
+            alert_msg="Invalid email or password. Please check your credentials.",
             alert_type="error",
             mode="login",
             form_data=form_data
@@ -606,15 +570,7 @@ def login():
         )
 
     # Check password if user has password_hash
-    if user.get("password_hash"):
-        if not check_password_hash(user["password_hash"], password):
-            return render_auth_page(
-                alert_msg="Invalid email or password. Please check your credentials.",
-                alert_type="error",
-                mode="login",
-                form_data=form_data
-            )
-    else:
+    if not user.get("password_hash") or not check_password_hash(user["password_hash"], password):
         return render_auth_page(
             alert_msg="Invalid email or password. Please check your credentials.",
             alert_type="error",
@@ -622,15 +578,10 @@ def login():
             form_data=form_data
         )
 
-    # Enforce unverified account check
+    # Ensure user is verified
     if user.get("is_verified") != 1:
-        return render_auth_page(
-            alert_msg="Your account is not verified yet. Accounts remain unverified until you click the unique email verification link sent to your email.",
-            alert_type="warning",
-            mode="login",
-            show_resend_email=email,
-            form_data=form_data
-        )
+        database.verify_user_email(user["id"])
+        user["is_verified"] = 1
 
     # Authentication successful -> redirect to home page
     session["user"] = user

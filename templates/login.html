@@ -526,7 +526,7 @@
             </h1>
             <p class="onboarding-subheading auth-subtitle" id="pageSubtitle">
                 {% if mode == 'register' %}
-                    {% if language == 'hi' %}सत्यापित ईमेल के साथ सुरक्षित किसान खाता बनाएं और तुरंत शुरू करें{% elif language == 'mr' %}सुरक्षित शेतकरी खाते तयार करा आणि ईमेल पडताळणी पूर्ण करा{% else %}Register with secure email verification to access personalized advisories.{% endif %}
+                    {% if language == 'hi' %}सुरक्षित किसान खाता बनाएं और तुरंत शुरू करें{% elif language == 'mr' %}सुरक्षित शेतकरी खाते तयार करा आणि लगेच सुरू करा{% else %}Create your farmer account to access personalized advisories.{% endif %}
                 {% else %}
                     {% if language == 'hi' %}अपने व्यक्तिगत फसल कैलेंडर, मौसम अलर्ट व किसान प्रोफाइल तक पहुंचें{% elif language == 'mr' %}आपले वैयक्तिक पीक नियोजन, हवामान अलर्ट व शेतकरी प्रोफाइल मिळवा{% else %}Access your personalized crop calendars, farm economics & alerts.{% endif %}
                 {% endif %}
@@ -649,7 +649,7 @@
                 <button type="submit" class="login-submit-btn onboarding-submit-btn" id="btnSubmitLogin">
                     <span id="btnText">
                         {% if mode == 'register' %}
-                            {% if language == 'hi' %}खाता बनाएं व ईमेल सत्यापित करें{% elif language == 'mr' %}खाते तयार करा व ईमेल पडताळा{% else %}Register & Send Verification Link{% endif %}
+                            {% if language == 'hi' %}खाता बनाएं / रजिस्टर करें{% elif language == 'mr' %}खाते तयार करा / नोंदणी करा{% else %}Create Account / Register{% endif %}
                         {% else %}
                             {{ t.btn_login_submit if t.btn_login_submit else 'Continue' }}
                         {% endif %}
@@ -724,8 +724,8 @@
                 groupConfirmPassword.removeAttribute('aria-hidden');
             }
             pageHeading.textContent = lang === 'hi' ? 'नया किसान खाता बनाएं' : (lang === 'mr' ? 'नवीन शेतकरी खाते तयार करा' : 'Create Farmer Account');
-            pageSubtitle.textContent = lang === 'hi' ? 'सत्यापित ईमेल के साथ सुरक्षित किसान खाता बनाएं और तुरंत शुरू करें' : (lang === 'mr' ? 'सुरक्षित शेतकरी खाते तयार करा आणि ईमेल पडताळणी पूर्ण करा' : 'Register with secure email verification to access personalized advisories.');
-            btnText.textContent = lang === 'hi' ? 'खाता बनाएं व ईमेल सत्यापित करें' : (lang === 'mr' ? 'खाते तयार करा व ईमेल पडताळा' : 'Register & Send Verification Link');
+            pageSubtitle.textContent = lang === 'hi' ? 'सुरक्षित किसान खाता बनाएं और तुरंत शुरू करें' : (lang === 'mr' ? 'सुरक्षित शेतकरी खाते तयार करा आणि लगेच सुरू करा' : 'Create your farmer account to access personalized advisories.');
+            btnText.textContent = lang === 'hi' ? 'खाता बनाएं / रजिस्टर करें' : (lang === 'mr' ? 'खाते तयार करा / नोंदणी करा' : 'Create Account / Register');
             switchPrompt.innerHTML = '<span>Already have an account?</span> <a href="javascript:void(0)" onclick="switchAuthMode(\'login\')" class="onboarding-link-green">Sign In</a>';
         } else {
             if (groupFarmerName) {
