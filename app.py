@@ -829,12 +829,9 @@ def api_location_save():
 
 @app.route("/")
 def home():
-    if "language" not in session:
-        return redirect(url_for("language_select"))
-
     user = current_user()
     if not user:
-        return redirect(url_for("login", onboarding="1"))
+        return redirect(url_for("language_select"))
 
     ctx = template_context("home")
     lat = user.get("lat", 18.5204)
