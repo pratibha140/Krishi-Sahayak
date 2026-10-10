@@ -193,6 +193,8 @@ def current_language():
     return session.get("language", "en")
 
 
+
+
 def current_user():
     user = session.get("user", None)
     if user and "id" not in user and user.get("email"):
@@ -202,6 +204,8 @@ def current_user():
             session["user"] = db_user
             return db_user
     return user
+
+
 
 
 def template_context(active_page):
@@ -838,13 +842,30 @@ def home():
     lon = user.get("lon", 73.8567)
     loc_name = user.get("location_name", "Pune, Maharashtra")
 
-    ctx["default_weather"] = get_weather_forecast(lat, lon, loc_name, lang=ctx["language"])
-    ctx["crop_progress"] = database.get_crop_progress(user["id"]) if user and user.get("id") else []
+    ctx["default_weather"] = get_weather_forecast(
+        lat, lon, loc_name, lang=ctx["language"]
+    )
 
-    # Ensure default progress tracker exists for primary crop
-    if not ctx["crop_progress"] and user.get("id"):
-        database.update_crop_progress(user["id"], user.get("primary_crop", "wheat"), "2026-06-15", "Vegetative", 3, 7)
-        ctx["crop_progress"] = database.get_crop_progress(user["id"])
+    user_id = user.get("id")
+    ctx["crop_progress"] = (
+        database.get_crop_progress(user_id) if user_id else []
+    )
+
+    # Create default progress only if the user exists in the database.
+    if (
+        not ctx["crop_progress"]
+        and user_id
+        and database.get_user_by_id(user_id)
+    ):
+        database.update_crop_progress(
+            user_id,
+            user.get("primary_crop", "wheat"),
+            "2026-06-15",
+            "Vegetative",
+            3,
+            7,
+        )
+        ctx["crop_progress"] = database.get_crop_progress(user_id)
 
     return render_template("index.html", **ctx)
 
