@@ -335,23 +335,97 @@ def get_crop_progress(user_id):
     return [dict(p) for p in progress]
 
 
-def update_crop_progress(user_id, crop_id, sowing_date, current_stage="Vegetative", tasks_completed=2, total_tasks=6):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    existing = cursor.execute("SELECT id FROM crop_progress WHERE user_id = ? AND crop_id = ?", (user_id, crop_id)).fetchone()
-    if existing:
-        cursor.execute("""
-            UPDATE crop_progress SET sowing_date = ?, current_stage = ?, tasks_completed = ?, total_tasks = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        """, (sowing_date, current_stage, tasks_completed, total_tasks, existing["id"]))
-    else:
-        cursor.execute("""
-            INSERT INTO crop_progress (user_id, crop_id, sowing_date, current_stage, tasks_completed, total_tasks)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (user_id, crop_id, sowing_date, current_stage, tasks_completed, total_tasks))
-    conn.commit()
-    conn.close()
 
+def update_crop_progress(
+    user_id,
+    crop_id,
+    sowing_date,
+    current_stage="Vegetative",
+    tasks_completed=2,
+    total_tasks=6
+):
+    import time
+
+    for attempt in range(4):
+        conn = None
+
+        try:
+            conn = get_db_connection()
+            conn.execute("PRAGMA busy_timeout = 5000;")
+
+            # Acquire the write lock before checking or inserting.
+            conn.execute("BEGIN IMMEDIATE")
+
+            cursor = conn.cursor()
+
+            existing = cursor.execute(
+                """
+                SELECT id FROM crop_progress
+                WHERE user_id = ? AND crop_id = ?
+                """,
+                (user_id, crop_id)
+            ).fetchone()
+
+            if existing:
+                cursor.execute(
+                    """
+                    UPDATE crop_progress
+                    SET sowing_date = ?,
+                        current_stage = ?,
+                        tasks_completed = ?,
+                        total_tasks = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (
+                        sowing_date,
+                        current_stage,
+                        tasks_completed,
+                        total_tasks,
+                        existing["id"]
+                    )
+                )
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO crop_progress
+                    (user_id, crop_id, sowing_date, current_stage,
+                     tasks_completed, total_tasks)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        user_id,
+                        crop_id,
+                        sowing_date,
+                        current_stage,
+                        tasks_completed,
+                        total_tasks
+                    )
+                )
+
+            conn.commit()
+            return
+
+        except Exception as e:
+            if conn is not None:
+                try:
+                    conn.rollback()
+                except sqlite3.Error:
+                    pass
+
+            is_locked = (
+                isinstance(e, sqlite3.OperationalError)
+                and "locked" in str(e).lower()
+            )
+
+            if not is_locked or attempt == 3:
+                raise
+
+            time.sleep(0.5 * (attempt + 1))
+
+        finally:
+            if conn is not None:
+                conn.close()
 
 def prune_backups(backup_dir=DEFAULT_BACKUP_DIR, keep_count=7, current_db_path=None):
     """
