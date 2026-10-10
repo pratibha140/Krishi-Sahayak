@@ -223,7 +223,7 @@ def reverse_geocode(lat, lon):
     try:
         url = (
             f"https://nominatim.openstreetmap.org/reverse"
-            f"?lat={lat_f}&lon={lon_f}&format=json&zoom=10&addressdetails=1"
+            f"?lat={lat_f}&lon={lon_f}&format=json&zoom=14&addressdetails=1"
         )
         headers = {"User-Agent": "KrishiSahayak/1.0 (agricultural-assistant)"}
         resp = requests.get(url, timeout=7, headers=headers)
@@ -232,8 +232,11 @@ def reverse_geocode(lat, lon):
         address = data.get("address", {})
         # Build a short human-readable name: city/town/village + state
         city = (
-            address.get("city")
+            address.get("suburb")
+            or address.get("city_district")
+            or address.get("neighbourhood")
             or address.get("town")
+            or address.get("city")
             or address.get("village")
             or address.get("county")
             or address.get("district")
